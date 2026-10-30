@@ -1,7 +1,5 @@
 # Testing plan
 
-Owner: Anny. Card S1-10.
-
 ## What we test and how
 
 | What | How | File | Pass when |
