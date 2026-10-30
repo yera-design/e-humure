@@ -1,6 +1,3 @@
-/* frontend/js/step-consent.js | owner: Audrey | card: S1-03 | branch: feature/audrey-s1-03-consent
-   depends on: questions.js (Audrey), app.js text() helper (Promise) | contract v1 */
-
 // Draws the consent screen. onDone(true) means the patient agreed.
 function renderConsent(box, onDone) {
   box.innerHTML = "";
