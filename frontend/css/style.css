@@ -1,0 +1,96 @@
+
+:root {
+  --ink: #15202b;
+  --muted: #5a6b7a;
+  --line: #d8e0e6;
+  --brand: #0f6b5c;
+  --brand-dark: #0a5247;
+  --warn: #b3261e;
+  --page: #f4f7f8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--page);
+  color: var(--ink);
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.card {
+  max-width: 560px;
+  margin: 0 auto 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 19px; margin: 0 0 12px; }
+
+.note { color: var(--muted); font-size: 15px; }
+
+.lang-switch { display: flex; gap: 8px; margin-bottom: 14px; }
+.lang-switch button { padding: 8px 14px; font-size: 15px; }
+
+.question {
+  border-top: 1px solid var(--line);
+  padding: 14px 0 4px;
+}
+
+.question:first-of-type { border-top: 0; }
+
+.options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+label.option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: #fff;
+}
+
+button {
+  font: inherit;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--brand);
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover { background: var(--brand-dark); }
+button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+
+.actions { display: flex; gap: 10px; margin-top: 18px; }
+
+.result-low { border-left: 6px solid var(--brand); padding-left: 12px; }
+.result-moderate { border-left: 6px solid #c07a00; padding-left: 12px; }
+.result-high { border-left: 6px solid var(--warn); padding-left: 12px; }
+
+.emergency {
+  margin-top: 14px;
+  border: 2px solid var(--warn);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.error { color: var(--warn); margin-top: 10px; }
+
+/* Stack the answer buttons on narrow phone screens. */
+@media (max-width: 420px) {
+  .options { flex-direction: column; }
+  .actions { flex-direction: column; }
+  .actions button { width: 100%; }
+}
