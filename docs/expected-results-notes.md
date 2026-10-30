@@ -1,7 +1,5 @@
 # How I work out the expected results
 
-Owner: Ivan. Cards S1-08 and S1-09.
-
 I do not read the scoring code. I read Table 1 of the proposal and write the answers myself. If his code and my sheet disagree, one of us is wrong and the team decides which.
 
 ## Table 1 in my own words
