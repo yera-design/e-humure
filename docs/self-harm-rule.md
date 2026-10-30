@@ -1,6 +1,5 @@
 # The self-harm rule
 
-Owners: Anny and Audrey. Card S1-12. Given to Djibril on Fri 30 Oct.
 
 ## The rule
 
