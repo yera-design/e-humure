@@ -1,3 +1,4 @@
+# Plan for the 50 fake patients
 
 Owner: Ines. Card S1-07. Made by `testing/generate-fake-patients.js` with a fixed seed, so the same 50 come out every time.
 
