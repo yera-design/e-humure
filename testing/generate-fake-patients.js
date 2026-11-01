@@ -4,7 +4,7 @@ var path = require("path");
 
 var SEED = 20261031;
 var CONDITIONS = ["diabetes", "hypertension"];
-var SECTORS = ["Sector-A", "Sector-B", "Sector-C", "Sector-D", "Sector-E", "Sector-F"];
+var SECTORS = ["Sector-A", "Sector-B", "Sector-C", "Sector-D", "Sector-E", "Sector-F", "Sector-G", "Sector-H"];
 
 // Same seed in, same numbers out (mulberry32).
 function makeRandom(seed) {

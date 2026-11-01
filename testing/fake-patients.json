@@ -3,7 +3,7 @@
     "id": "P-0001",
     "age": 47,
     "condition": "diabetes",
-    "sector": "Sector-F",
+    "sector": "Sector-G",
     "phone": "+250787019274",
     "whooley": [
       false,
@@ -27,7 +27,7 @@
     "id": "P-0003",
     "age": 38,
     "condition": "hypertension",
-    "sector": "Sector-B",
+    "sector": "Sector-C",
     "phone": "+250781466107",
     "whooley": [
       false,
@@ -51,7 +51,7 @@
     "id": "P-0005",
     "age": 34,
     "condition": "hypertension",
-    "sector": "Sector-F",
+    "sector": "Sector-H",
     "phone": "+250781719130",
     "whooley": [
       false,
@@ -63,7 +63,7 @@
     "id": "P-0006",
     "age": 73,
     "condition": "hypertension",
-    "sector": "Sector-D",
+    "sector": "Sector-E",
     "phone": "+250782306986",
     "whooley": [
       false,
@@ -75,7 +75,7 @@
     "id": "P-0007",
     "age": 56,
     "condition": "hypertension",
-    "sector": "Sector-E",
+    "sector": "Sector-G",
     "phone": "+250784793208",
     "whooley": [
       false,
@@ -87,7 +87,7 @@
     "id": "P-0008",
     "age": 62,
     "condition": "hypertension",
-    "sector": "Sector-C",
+    "sector": "Sector-D",
     "phone": "+250781536786",
     "whooley": [
       false,
@@ -121,7 +121,7 @@
     "id": "P-0010",
     "age": 57,
     "condition": "hypertension",
-    "sector": "Sector-E",
+    "sector": "Sector-F",
     "phone": "+250788410029",
     "whooley": [
       true,
@@ -143,7 +143,7 @@
     "id": "P-0011",
     "age": 80,
     "condition": "diabetes",
-    "sector": "Sector-D",
+    "sector": "Sector-E",
     "phone": "+250784853450",
     "whooley": [
       true,
@@ -165,7 +165,7 @@
     "id": "P-0012",
     "age": 82,
     "condition": "hypertension",
-    "sector": "Sector-B",
+    "sector": "Sector-C",
     "phone": "+250781390521",
     "whooley": [
       true,
@@ -187,7 +187,7 @@
     "id": "P-0013",
     "age": 61,
     "condition": "hypertension",
-    "sector": "Sector-E",
+    "sector": "Sector-G",
     "phone": "+250785337174",
     "whooley": [
       true,
@@ -209,7 +209,7 @@
     "id": "P-0014",
     "age": 23,
     "condition": "hypertension",
-    "sector": "Sector-C",
+    "sector": "Sector-D",
     "phone": "+250786204076",
     "whooley": [
       true,
@@ -231,7 +231,7 @@
     "id": "P-0015",
     "age": 64,
     "condition": "diabetes",
-    "sector": "Sector-E",
+    "sector": "Sector-F",
     "phone": "+250785048593",
     "whooley": [
       true,
@@ -253,7 +253,7 @@
     "id": "P-0016",
     "age": 63,
     "condition": "diabetes",
-    "sector": "Sector-F",
+    "sector": "Sector-H",
     "phone": "+250785875027",
     "whooley": [
       true,
@@ -275,7 +275,7 @@
     "id": "P-0017",
     "age": 36,
     "condition": "diabetes",
-    "sector": "Sector-F",
+    "sector": "Sector-G",
     "phone": "+250781718722",
     "whooley": [
       true,
@@ -297,7 +297,7 @@
     "id": "P-0018",
     "age": 24,
     "condition": "diabetes",
-    "sector": "Sector-D",
+    "sector": "Sector-E",
     "phone": "+250788971723",
     "whooley": [
       true,
@@ -319,7 +319,7 @@
     "id": "P-0019",
     "age": 43,
     "condition": "hypertension",
-    "sector": "Sector-C",
+    "sector": "Sector-D",
     "phone": "+250785961469",
     "whooley": [
       true,
@@ -341,7 +341,7 @@
     "id": "P-0020",
     "age": 42,
     "condition": "hypertension",
-    "sector": "Sector-D",
+    "sector": "Sector-E",
     "phone": "+250782284397",
     "whooley": [
       true,
@@ -363,7 +363,7 @@
     "id": "P-0021",
     "age": 33,
     "condition": "diabetes",
-    "sector": "Sector-E",
+    "sector": "Sector-G",
     "phone": "+250781193115",
     "whooley": [
       true,
@@ -385,7 +385,7 @@
     "id": "P-0022",
     "age": 59,
     "condition": "diabetes",
-    "sector": "Sector-F",
+    "sector": "Sector-H",
     "phone": "+250783082500",
     "whooley": [
       true,
@@ -407,7 +407,7 @@
     "id": "P-0023",
     "age": 88,
     "condition": "diabetes",
-    "sector": "Sector-F",
+    "sector": "Sector-H",
     "phone": "+250786576215",
     "whooley": [
       true,
@@ -429,7 +429,7 @@
     "id": "P-0024",
     "age": 48,
     "condition": "diabetes",
-    "sector": "Sector-E",
+    "sector": "Sector-G",
     "phone": "+250787398218",
     "whooley": [
       true,
@@ -473,7 +473,7 @@
     "id": "P-0026",
     "age": 71,
     "condition": "diabetes",
-    "sector": "Sector-E",
+    "sector": "Sector-F",
     "phone": "+250786740102",
     "whooley": [
       true,
@@ -539,7 +539,7 @@
     "id": "P-0029",
     "age": 29,
     "condition": "hypertension",
-    "sector": "Sector-C",
+    "sector": "Sector-D",
     "phone": "+250782606451",
     "whooley": [
       true,
@@ -561,7 +561,7 @@
     "id": "P-0030",
     "age": 42,
     "condition": "hypertension",
-    "sector": "Sector-A",
+    "sector": "Sector-B",
     "phone": "+250786978288",
     "whooley": [
       true,
@@ -583,7 +583,7 @@
     "id": "P-0031",
     "age": 26,
     "condition": "diabetes",
-    "sector": "Sector-A",
+    "sector": "Sector-B",
     "phone": "+250788462628",
     "whooley": [
       true,
@@ -605,7 +605,7 @@
     "id": "P-0032",
     "age": 69,
     "condition": "hypertension",
-    "sector": "Sector-C",
+    "sector": "Sector-D",
     "phone": "+250782624710",
     "whooley": [
       true,
@@ -649,7 +649,7 @@
     "id": "P-0034",
     "age": 85,
     "condition": "hypertension",
-    "sector": "Sector-C",
+    "sector": "Sector-D",
     "phone": "+250787285629",
     "whooley": [
       true,
@@ -671,7 +671,7 @@
     "id": "P-0035",
     "age": 47,
     "condition": "diabetes",
-    "sector": "Sector-A",
+    "sector": "Sector-B",
     "phone": "+250781137775",
     "whooley": [
       true,
@@ -693,7 +693,7 @@
     "id": "P-0036",
     "age": 53,
     "condition": "hypertension",
-    "sector": "Sector-D",
+    "sector": "Sector-E",
     "phone": "+250788278453",
     "whooley": [
       true,
@@ -759,7 +759,7 @@
     "id": "P-0039",
     "age": 71,
     "condition": "hypertension",
-    "sector": "Sector-C",
+    "sector": "Sector-D",
     "phone": "+250785118968",
     "whooley": [
       true,
@@ -781,7 +781,7 @@
     "id": "P-0040",
     "age": 51,
     "condition": "diabetes",
-    "sector": "Sector-D",
+    "sector": "Sector-E",
     "phone": "+250781286598",
     "whooley": [
       true,
@@ -847,7 +847,7 @@
     "id": "P-0043",
     "age": 38,
     "condition": "diabetes",
-    "sector": "Sector-F",
+    "sector": "Sector-H",
     "phone": "+250783270921",
     "whooley": [
       true,
@@ -869,7 +869,7 @@
     "id": "P-0044",
     "age": 70,
     "condition": "diabetes",
-    "sector": "Sector-B",
+    "sector": "Sector-C",
     "phone": "+250783278803",
     "whooley": [
       true,
@@ -913,7 +913,7 @@
     "id": "P-0046",
     "age": 24,
     "condition": "hypertension",
-    "sector": "Sector-F",
+    "sector": "Sector-H",
     "phone": "+250783701009",
     "whooley": [
       true,
@@ -935,7 +935,7 @@
     "id": "P-0047",
     "age": 46,
     "condition": "diabetes",
-    "sector": "Sector-D",
+    "sector": "Sector-F",
     "phone": "+250784239722",
     "whooley": [
       true,
@@ -957,7 +957,7 @@
     "id": "P-0048",
     "age": 43,
     "condition": "hypertension",
-    "sector": "Sector-B",
+    "sector": "Sector-C",
     "phone": "+250783102418",
     "whooley": [
       true,
