@@ -1,4 +1,5 @@
-var express = require("express");var cors = require("cors");
+var express = require("express");
+var cors = require("cors");
 var bcrypt = require("bcryptjs");
 
 var store = require("./store");
