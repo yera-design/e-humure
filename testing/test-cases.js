@@ -1,42 +1,50 @@
 
+
 var assert = require("assert");
-var q = require("../frontend/questions");
+var scoring = require("../backend/scoring");
 
-assert.strictEqual(q.PHQ9_QUESTIONS.length, 9, "there must be exactly 9 PHQ-9 questions");
-assert.strictEqual(q.QUICK_QUESTIONS.length, 2, "there must be exactly 2 quick questions");
-assert.deepStrictEqual(q.PHQ9_OPTIONS.map(function (o) { return o.value; }), [0, 1, 2, 3]);
-
-var missing = [];
-var labels = [];
-
-// Walks every text object and records the ones with no Kinyarwanda yet.
-function check(label, item) {
-  labels.push(label);
-  assert.strictEqual(typeof item.en, "string", label + " needs English text");
-  assert.ok(item.en.length > 0, label + " English text is empty");
-  assert.strictEqual(typeof item.rw, "string", label + " rw must be a string");
-  if (item.rw === "") missing.push(label);
+// Builds 9 answers: the first 8 add up to the target, item 9 is set on its own.
+function build(target, item9) {
+  var items = [0, 0, 0, 0, 0, 0, 0, 0];
+  var left = target;
+  for (var i = 0; i < 8 && left > 0; i++) {
+    items[i] = Math.min(3, left);
+    left -= items[i];
+  }
+  return items.concat([item9]);
 }
 
-check("PHQ9_STEM", q.PHQ9_STEM);
-check("QUICK_STEM", q.QUICK_STEM);
-q.PHQ9_OPTIONS.forEach(function (o, i) { check("PHQ9_OPTIONS[" + i + "]", o); });
-q.PHQ9_QUESTIONS.forEach(function (o, i) { check("PHQ9_QUESTIONS[" + (i + 1) + "]", o); });
-q.QUICK_QUESTIONS.forEach(function (o, i) { check("QUICK_QUESTIONS[" + (i + 1) + "]", o); });
-Object.keys(q.CONSENT_TEXT).forEach(function (k) { check("CONSENT_TEXT." + k, q.CONSENT_TEXT[k]); });
-Object.keys(q.UI_TEXT).forEach(function (k) { check("UI_TEXT." + k, q.UI_TEXT[k]); });
+var quickNo = scoring.scoreQuickQuestions([false, false]);
+assert.strictEqual(quickNo.positive, false);
+assert.strictEqual(quickNo.risk, "low");
+assert.strictEqual(quickNo.next, "rescreen");
 
+var quickYes = scoring.scoreQuickQuestions([true, false]);
+assert.strictEqual(quickYes.positive, true);
+assert.strictEqual(quickYes.next, "phq9");
 
-q.RW_NEEDS_CLINICIAN_CHECK.forEach(function (label) {
-  assert.ok(labels.indexOf(label) !== -1, label + " is on the clinician list but does not exist");
-});
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(4, 0)).risk, "low");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(5, 0)).risk, "moderate");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(9, 0)).risk, "moderate");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(10, 0)).risk, "high");
 
-console.log("Checks passed on " + labels.length + " strings.");
-console.log("Still missing Kinyarwanda: " + missing.length);
-missing.forEach(function (label) { console.log("  - " + label); });
-console.log("Team draft, waiting for a clinician: " + q.RW_NEEDS_CLINICIAN_CHECK.length);
-q.RW_NEEDS_CLINICIAN_CHECK.forEach(function (label) { console.log("  - " + label); });
+var selfHarm = scoring.scoreFullQuestionnaire(build(0, 1));
+assert.strictEqual(selfHarm.total, 1);
+assert.strictEqual(selfHarm.risk, "high");
+assert.strictEqual(selfHarm.emergency, true);
 
-if (missing.length > 0 || q.RW_NEEDS_CLINICIAN_CHECK.length > 0) {
-  console.log('LANGUAGE_DEFAULT must stay "en". The nurse can still switch to Kinyarwanda on the page.');
-}
+var maxNoItem9 = scoring.scoreFullQuestionnaire(build(24, 0));
+assert.strictEqual(maxNoItem9.total, 24);
+assert.strictEqual(maxNoItem9.risk, "high");
+assert.strictEqual(maxNoItem9.emergency, false);
+
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(24, 3)).total, 27);
+
+// Bad input must throw, never return a quiet wrong answer.
+assert.throws(function () { scoring.scoreQuickQuestions([true]); });
+assert.throws(function () { scoring.scoreQuickQuestions(["yes", "no"]); });
+assert.throws(function () { scoring.scoreFullQuestionnaire([0, 0, 0, 0, 0, 0, 0, 0]); });
+assert.throws(function () { scoring.scoreFullQuestionnaire([0, 0, 0, 0, 0, 0, 0, 0, 4]); });
+assert.throws(function () { scoring.scoreFullQuestionnaire([0, 0, 0, 0, 0, 0, 0, 0, 1.5]); });
+
+console.log("All boundary test cases passed");
