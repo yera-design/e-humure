@@ -1,17 +1,22 @@
 {
   "name": "ehumure-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "e-Humure Sprint 1 backend: login, roles and depression screening scores",
+  "description": "e-Humure Sprint 2",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "sync": "node sync.js",
+    "simulator": "node sms-simulator.js"
   },
   "dependencies": {
     "bcryptjs": "2.4.3",
     "cors": "2.8.5",
     "express": "4.21.2",
-    "jsonwebtoken": "9.0.2"
+    "jsonwebtoken": "9.0.2",
+    "pg": "8.13.3",
+    "uuid": "9.0.1"
   },
   "engines": {
     "node": ">=18"
