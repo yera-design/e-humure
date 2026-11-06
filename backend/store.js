@@ -1,42 +1,36 @@
-var users = [
-  {
-    username: "nurse1",
-    name: "Demo Nurse",
-    role: "nurse",
-    passwordHash: "$2b$10$vfqzjzlYdHVRmNODH2FXTuQs5Y2uTreK9vKlZFC9yfDy7C.c98P7G"
-  },
-  {
-    username: "psych1",
-    name: "Demo Psychologist",
-    role: "psychologist",
-    passwordHash: "$2b$10$vqzgIoLA0EH/KOkQynK0uu6NV8C.KhzTbwx1cpwKPQnmqPuxOX8ty"
-  },
-  {
-    username: "desk1",
-    name: "Demo Desk Staff",
-    role: "desk",
-    passwordHash: "$2b$10$1E0VqKn2LBC.C17QMOjeeOZ5s2Vnkrzfupq3EDYWnmc2hgqB4JVJu"
-  }
-];
+var pool = require("./db");
 
-var screenings = [];
-
-function findUser(username) {
-  return users.find(function (u) { return u.username === username; }) || null;
+// Look up a staff member by their full name, which is used as the login username.
+async function findUserByUsername(username) {
+  var res = await pool.query(
+    "SELECT staff_id, full_name AS name, role, password_hash AS \"passwordHash\" FROM staff WHERE full_name = $1 LIMIT 1",
+    [username]
+  );
+  return res.rows[0] || null;
 }
 
-// Sprint 1 keeps results in memory only; Sprint 2 writes them to PostgreSQL.
-function addScreening(record) {
-  screenings.push(record);
-  return screenings.length;
+// Save one screening result. Called by the /score route after scoring.
+async function addScreening(record) {
+  await pool.query(
+    "INSERT INTO screening(screening_id,patient_id,staff_id,stage,responses,total_score,item9_flag,sync_status) VALUES($1,$2,$3,$4,$5,$6,$7,'pending')",
+    [
+      record.id,
+      record.patientId,
+      record.staffId,
+      record.stage,
+      JSON.stringify(record.responses),
+      record.total,
+      record.item9Flag
+    ]
+  );
 }
 
-function countScreenings() {
-  return screenings.length;
+// Save one risk alert. Called after a screening comes back moderate or high.
+async function addAlert(alertId, screeningId, riskLevel) {
+  await pool.query(
+    "INSERT INTO risk_alert(alert_id,screening_id,risk_level,status) VALUES($1,$2,$3,'open') ON CONFLICT DO NOTHING",
+    [alertId, screeningId, riskLevel]
+  );
 }
 
-module.exports = {
-  findUser: findUser,
-  addScreening: addScreening,
-  countScreenings: countScreenings
-};
+module.exports = { findUserByUsername, addScreening, addAlert };
