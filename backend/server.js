@@ -1,7 +1,7 @@
 var express = require("express");
 var cors = require("cors");
 var bcrypt = require("bcryptjs");
-
+var { v4: uuidv4 } = require("uuid");
 var store = require("./store");
 var auth = require("./auth");
 var scoring = require("./scoring");
@@ -17,20 +17,25 @@ app.get("/health", function (req, res) {
 });
 
 // Wrong username and wrong password give the same message on purpose.
-app.post("/login", function (req, res) {
+app.post("/login", async function (req, res) {
   var body = req.body || {};
-  var user = store.findUser(String(body.username || ""));
-  if (!user || !bcrypt.compareSync(String(body.password || ""), user.passwordHash)) {
-    return res.status(401).json({ error: auth.SAME_LOGIN_ERROR });
+  try {
+    var user = await store.findUserByUsername(String(body.username || ""));
+    if (!user || !bcrypt.compareSync(String(body.password || ""), user.passwordHash)) {
+      return res.status(401).json({ error: auth.SAME_LOGIN_ERROR });
+    }
+    res.json({ token: auth.createToken(user), role: user.role, name: user.name });
+  } catch (err) {
+    console.error("LOGIN ERROR:", err.message);
+    res.status(500).json({ error: "Database error" });
   }
-  res.json({ token: auth.createToken(user), role: user.role, name: user.name });
 });
 
 app.get("/me", auth.requireLogin, function (req, res) {
   res.json({ username: req.user.username, role: req.user.role });
 });
 
-app.post("/score", auth.requireLogin, auth.requirePermission("record_screening"), function (req, res) {
+app.post("/score", auth.requireLogin, auth.requirePermission("record_screening"), async function (req, res) {
   var body = req.body || {};
   try {
     var result = body.stage === "quick"
@@ -39,10 +44,15 @@ app.post("/score", auth.requireLogin, auth.requirePermission("record_screening")
         ? scoring.scoreFullQuestionnaire(body.answers)
         : null;
     if (!result) throw new Error('stage must be "quick" or "full"');
-    store.addScreening({ stage: result.stage, risk: result.risk, at: new Date().toISOString() });
-    res.json(result);
+    var screenId = uuidv4();
+    await store.addScreening({
+   	id: screenId, patientId: body.patientId, staffId: req.user.staffId,
+   	stage: result.stage, responses: body.answers,
+    	total: result.total, item9Flag: result.emergency
+   });
+    res.json(results);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ error: err.code === "23503" ? "Unknown patientId" : err.message });
   }
 });
 
