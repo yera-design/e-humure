@@ -39,7 +39,7 @@
           out.data.forEach(function (a) {
             var p = document.createElement("p");
             p.textContent = new Date(a.scheduled_for).toLocaleString() +
-              " — Patient " + a.patient_id + " — " + a.location + " (" + a.status + ")";
+              " — Patient " + a.patient_id + " (" + a.phone + ") — " + a.location + " (" + a.status + ")";
             box.appendChild(p);
           });
         })
