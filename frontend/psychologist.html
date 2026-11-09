@@ -34,13 +34,31 @@
         .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
         .then(function (out) {
           if (!out.ok) { box.textContent = out.data.error; return; }
-          if (out.data.length === 0) { box.textContent = "No appointments booked yet."; return; }
+                    if (out.data.length === 0) { box.textContent = "Total appointments: 0. None booked yet."; return; }
           box.innerHTML = "";
+          var total = document.createElement("p");
+          total.style.fontWeight = "bold";
+          total.textContent = "Total appointments: " + out.data.length;
+          box.appendChild(total);
           out.data.forEach(function (a) {
-            var p = document.createElement("p");
-            p.textContent = new Date(a.scheduled_for).toLocaleString() +
-              " — Patient " + a.patient_id + " (" + a.phone + ") — " + a.location + " (" + a.status + ")";
-            box.appendChild(p);
+            var item = document.createElement("div");
+            item.style.border = "1px solid #d8e0e6";
+            item.style.borderRadius = "8px";
+            item.style.padding = "12px";
+            item.style.margin = "10px 0";
+            var title = document.createElement("strong");
+            title.textContent = "Patient " + a.patient_id;
+            var when = document.createElement("div");
+            when.textContent = new Date(a.scheduled_for).toLocaleString();
+            var phone = document.createElement("div");
+            phone.textContent = "Phone: " + a.phone;
+            var where = document.createElement("div");
+            where.textContent = a.location + " (" + a.status + ")";
+            item.appendChild(title);
+            item.appendChild(when);
+            item.appendChild(phone);
+            item.appendChild(where);
+            box.appendChild(item);
           });
         })
         .catch(function () { box.textContent = "Cannot reach the backend."; });
