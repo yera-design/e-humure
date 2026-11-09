@@ -14,6 +14,18 @@
     </div>
     <h1>e-Humure</h1>
     <p class="note" id="welcome"></p>
+        <label for="patient-code">Patient code (no names)</label>
+    <input id="patient-code" placeholder="e.g. P-SEED-001">
+    <h2>New patient</h2>
+    <input id="reg-age" type="number" placeholder="Age">
+    <select id="reg-condition">
+      <option value="diabetes">Diabetes</option>
+      <option value="hypertension">Hypertension</option>
+    </select>
+    <input id="reg-sector" placeholder="Sector">
+    <input id="reg-phone" placeholder="Phone, e.g. +250780000003">
+    <button type="button" id="reg-save">Register patient</button>
+    <p class="note" id="reg-message"></p>
     <p class="note"><a href="login.html">Sign out</a></p>
   </div>
   <div id="screen"></div>
@@ -29,6 +41,27 @@
     var role = sessionStorage.getItem("ehumure_role");
     if (!name || role !== "nurse") window.location.href = "login.html";
     document.getElementById("welcome").textContent = "Signed in as " + name;
+    
+    document.getElementById("reg-save").onclick = function () {
+      var msg = document.getElementById("reg-message");
+      fetch("http://localhost:4000/patients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + sessionStorage.getItem("ehumure_token") },
+        body: JSON.stringify({
+          age: document.getElementById("reg-age").value,
+          condition: document.getElementById("reg-condition").value,
+          sector: document.getElementById("reg-sector").value,
+          phone: document.getElementById("reg-phone").value
+        })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (d) {
+          if (d.error) { msg.textContent = d.error; return; }
+          document.getElementById("patient-code").value = d.patientId;
+          msg.textContent = "Patient code: " + d.patientId + ". Write it down.";
+        })
+        .catch(function () { msg.textContent = "Cannot reach the backend."; });
+    };
   </script>
 </body>
 </html>
