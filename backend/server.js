@@ -71,6 +71,9 @@ app.post("/score", auth.requireLogin, auth.requirePermission("record_screening")
     total: result.total,
     item9Flag: result.emergency
   });
+  if (result.risk === "moderate" || result.risk === "high") {
+      await store.addAlert(uuidv4(), screenId, result.risk);
+    }
     res.json(result);
   } catch (err) {
     res.status(400).json({
