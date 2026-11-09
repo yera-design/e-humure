@@ -50,7 +50,7 @@ app.post("/score", auth.requireLogin, auth.requirePermission("record_screening")
    	stage: result.stage, responses: body.answers,
     	total: result.total, item9Flag: result.emergency
    });
-    res.json(results);
+    res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.code === "23503" ? "Unknown patientId" : err.message });
   }
