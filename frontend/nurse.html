@@ -16,6 +16,7 @@
     <p class="note" id="welcome"></p>
         <label for="patient-code">Patient code (no names)</label>
     <input id="patient-code" placeholder="e.g. P-SEED-001">
+    <button type="button" id="start-screen">Start screening</button>
     <h2>New patient</h2>
     <input id="reg-age" type="number" placeholder="Age">
     <select id="reg-condition">
@@ -61,7 +62,7 @@
         .then(function (res) { return res.json(); })
         .then(function (d) {
           if (d.error) { msg.textContent = d.error; return; }
-          document.getElementById("patient-code").value = d.patientId;
+          document.getElementById("start-screen").onclick = updateScreen;
                     updateScreen();
           msg.textContent = "Patient code: " + d.patientId + ". Write it down.";
         })
