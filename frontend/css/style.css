@@ -94,3 +94,9 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
   .actions { flex-direction: column; }
   .actions button { width: 100%; }
 }
+
+/* Red border around the entire card when a patient flags self-harm. */
+.emergency-border {
+  border: 3px solid var(--warn);
+}
+/* item9_flag is true when the patient reports thoughts of self-harm. */
