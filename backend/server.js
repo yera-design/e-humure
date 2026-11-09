@@ -118,6 +118,7 @@ app.get("/alerts", auth.requireLogin, auth.requirePermission("read_screening_det
       var rows = await pool.query(
         "SELECT a.alert_id, a.risk_level, a.status, " +
         "s.total_score, s.item9_flag, s.screened_at, s.patient_id, p.phone_enc " +
+        "FROM risk_alert a JOIN screening s ON s.screening_id = a.screening_id " +
         "JOIN patient p ON p.patient_id = s.patient_id " +
         "WHERE a.status = 'open' ORDER BY s.screened_at DESC"
       );
