@@ -96,7 +96,8 @@ app.post("/patients", auth.requireLogin, auth.requirePermission("create_patient"
   }
   try {
     var pool = require("./db");
-    var patientId = "P-" + uuidv4().slice(0, 6).toUpperCase();
+    var seq = await pool.query("SELECT nextval('patient_code_seq') AS n");
+    var patientId = "P-" + String(seq.rows[0].n).padStart(4, "0");
     await pool.query(
       "INSERT INTO patient(patient_id,age,chronic_condition,sector,phone_enc,consent_given_at) VALUES($1,$2,$3,$4,$5,now())",
       [patientId, age, body.condition, String(body.sector), require("./phone").encryptPhone(phone)]
