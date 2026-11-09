@@ -14,12 +14,39 @@
   </div>
   <div id="alert-list"></div>
   <div id="alert-detail" style="display:none"></div>
+  <div class="card">
+  <h2>My appointments</h2>
+  <div id="appointment-list" class="note">Loading...</div>
+  <button type="button" id="appt-refresh" class="secondary">Refresh</button>
+  </div>
   <script src="js/dashboard.js"></script>
   <script>
     var name = sessionStorage.getItem("ehumure_name");
     var role = sessionStorage.getItem("ehumure_role");
     if (!name || role !== "psychologist") window.location.href = "login.html";
     document.getElementById("welcome").textContent = "Signed in as " + name;
+    
+    function loadAppointments() {
+      var box = document.getElementById("appointment-list");
+      fetch("http://localhost:4000/appointments", {
+        headers: { Authorization: "Bearer " + sessionStorage.getItem("ehumure_token") }
+      })
+        .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
+        .then(function (out) {
+          if (!out.ok) { box.textContent = out.data.error; return; }
+          if (out.data.length === 0) { box.textContent = "No appointments booked yet."; return; }
+          box.innerHTML = "";
+          out.data.forEach(function (a) {
+            var p = document.createElement("p");
+            p.textContent = new Date(a.scheduled_for).toLocaleString() +
+              " — Patient " + a.patient_id + " — " + a.location + " (" + a.status + ")";
+            box.appendChild(p);
+          });
+        })
+        .catch(function () { box.textContent = "Cannot reach the backend."; });
+    }
+    document.getElementById("appt-refresh").onclick = loadAppointments;
+    loadAppointments();
   </script>
 </body>
 </html>
