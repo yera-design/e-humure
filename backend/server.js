@@ -84,6 +84,29 @@ app.post("/score", auth.requireLogin, auth.requirePermission("record_screening")
   }
 });
 
+
+app.post("/patients", auth.requireLogin, auth.requirePermission("create_patient"), async function (req, res) {
+  var body = req.body || {};
+  var age = Number(body.age);
+  var phone = String(body.phone || "").trim();
+  if (!(age >= 18 && age <= 120) ||
+      ["diabetes", "hypertension"].indexOf(body.condition) === -1 ||
+      !body.sector || !/^\+?[0-9]{9,15}$/.test(phone)) {
+    return res.status(400).json({ error: "age (18-120), condition (diabetes or hypertension), sector and a valid phone are required" });
+  }
+  try {
+    var pool = require("./db");
+    var patientId = "P-" + uuidv4().slice(0, 6).toUpperCase();
+    await pool.query(
+      "INSERT INTO patient(patient_id,age,chronic_condition,sector,phone_enc,consent_given_at) VALUES($1,$2,$3,$4,$5,now())",
+      [patientId, age, body.condition, String(body.sector), require("./phone").encryptPhone(phone)]
+    );
+    res.json({ patientId: patientId });
+  } catch (e) {
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // GET /alerts: psychologist sees open alerts.
 app.get("/alerts", auth.requireLogin, auth.requirePermission("read_screening_details"),
   async function (req, res) {
@@ -94,12 +117,17 @@ app.get("/alerts", auth.requireLogin, auth.requirePermission("read_screening_det
       var pool = require("./db");
       var rows = await pool.query(
         "SELECT a.alert_id, a.risk_level, a.status, " +
-        "s.total_score, s.item9_flag, s.screened_at, s.patient_id " +
-        "FROM risk_alert a JOIN screening s ON s.screening_id = a.screening_id " +
+        "s.total_score, s.item9_flag, s.screened_at, s.patient_id, p.phone_enc " +
+        "JOIN patient p ON p.patient_id = s.patient_id " +
         "WHERE a.status = 'open' ORDER BY s.screened_at DESC"
       );
       await require("./audit").logAccess(req.user.staffId, "read_alerts", "risk_alert", "all");
-      res.json(rows.rows);
+      var out = rows.rows.map(function (r) {
+        r.phone = require("./phone").decryptPhone(r.phone_enc);
+        delete r.phone_enc;
+        return r;
+      });
+      res.json(out);
     } catch (e) {
       res.status(500).json({ error: "Database error" });
     }
