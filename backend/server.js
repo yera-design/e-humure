@@ -171,12 +171,18 @@ app.get("/appointments", auth.requireLogin, auth.requirePermission("read_screeni
     try {
       var pool = require("./db");
       var rows = await pool.query(
-        "SELECT appointment_id, patient_id, scheduled_for, location, status " +
-        "FROM appointment WHERE psychologist_id = $1 ORDER BY scheduled_for ASC",
+        "SELECT a.appointment_id, a.patient_id, a.scheduled_for, a.location, a.status, p.phone_enc " +
+        "FROM appointment a JOIN patient p ON p.patient_id = a.patient_id " +
+        "WHERE a.psychologist_id = $1 ORDER BY a.scheduled_for ASC",
         [req.user.staffId]
       );
       await require("./audit").logAccess(req.user.staffId, "read_appointments", "appointment", "all");
-      res.json(rows.rows);
+      var out = rows.rows.map(function (r) {
+        r.phone = require("./phone").decryptPhone(r.phone_enc);
+        delete r.phone_enc;
+        return r;
+      });
+      res.json(out);
     } catch (e) {
       console.error("APPOINTMENTS ERROR:", e.message);
       res.status(500).json({ error: "Database error" });
