@@ -68,8 +68,9 @@ function renderDetail(a) {
   }
 
   var score = document.createElement("p");
-  score.textContent = "PHQ-9 total: " + a.total_score + " out of 27";
-  card.appendChild(score);
+  var phone = document.createElement("p");
+  phone.textContent = "Patient phone: " + a.phone;
+  card.appendChild(phone);
 
   var dateLabel = document.createElement("p");
   dateLabel.className = "note";
