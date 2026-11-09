@@ -1,7 +1,7 @@
 var express = require("express");
 var cors = require("cors");
 var bcrypt = require("bcryptjs");
-
+var { v4: uuidv4 } = require("uuid");
 var store = require("./store");
 var auth = require("./auth");
 var scoring = require("./scoring");
@@ -17,20 +17,41 @@ app.get("/health", function (req, res) {
 });
 
 // Wrong username and wrong password give the same message on purpose.
-app.post("/login", function (req, res) {
-  var body = req.body || {};
-  var user = store.findUser(String(body.username || ""));
-  if (!user || !bcrypt.compareSync(String(body.password || ""), user.passwordHash)) {
-    return res.status(401).json({ error: auth.SAME_LOGIN_ERROR });
-  }
-  res.json({ token: auth.createToken(user), role: user.role, name: user.name });
+app.post("/login", async function (req, res) {
+    var body = req.body || {};
+
+    try {
+        var user = await store.findUserByUsername(
+            String(body.username || "")
+        );
+
+        if (!user || !bcrypt.compareSync(
+            String(body.password || ""),
+            user.passwordHash
+        )) {
+            return res.status(401).json({
+                error: auth.SAME_LOGIN_ERROR
+            });
+        }
+
+        res.json({
+            token: auth.createToken(user),
+            role: user.role,
+            name: user.name
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            error: "Database error"
+        });
+    }
 });
 
 app.get("/me", auth.requireLogin, function (req, res) {
   res.json({ username: req.user.username, role: req.user.role });
 });
 
-app.post("/score", auth.requireLogin, auth.requirePermission("record_screening"), function (req, res) {
+app.post("/score", auth.requireLogin, auth.requirePermission("record_screening"), async function (req, res) {
   var body = req.body || {};
   try {
     var result = body.stage === "quick"
@@ -39,12 +60,75 @@ app.post("/score", auth.requireLogin, auth.requirePermission("record_screening")
         ? scoring.scoreFullQuestionnaire(body.answers)
         : null;
     if (!result) throw new Error('stage must be "quick" or "full"');
-    store.addScreening({ stage: result.stage, risk: result.risk, at: new Date().toISOString() });
+  var screenId = uuidv4();
+
+  await store.addScreening({
+    id: screenId,
+    patientId: body.patientId,
+    staffId: req.user.staffId,
+    stage: result.stage,
+    responses: body.answers,
+    total: result.total,
+    item9Flag: result.emergency
+  });
     res.json(result);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({
+    error: err.code === "23503"
+        ? "Unknown patientId"
+        : err.message
+    });
   }
 });
+
+// GET /alerts: psychologist sees open alerts.
+app.get("/alerts", auth.requireLogin, auth.requirePermission("read_screening_details"),
+  async function (req, res) {
+    if (req.user.role === "nurse") {
+      return res.status(403).json({ error: "Your role is not allowed to do this" });
+    }
+    try {
+      var pool = require("./db");
+      var rows = await pool.query(
+        "SELECT a.alert_id, a.risk_level, a.status, " +
+        "s.total_score, s.item9_flag, s.screened_at, s.patient_id " +
+        "FROM risk_alert a JOIN screening s ON s.screening_id = a.screening_id " +
+        "WHERE a.status = 'open' ORDER BY s.screened_at DESC"
+      );
+      await require("./audit").logAccess(req.user.staffId, "read_alerts", "risk_alert", "all");
+      res.json(rows.rows);
+    } catch (e) {
+      res.status(500).json({ error: "Database error" });
+    }
+  }
+);
+
+// POST /appointments: psychologist books an appointment and the alert is acknowledged.
+app.post("/appointments", auth.requireLogin, auth.requirePermission("read_screening_details"),
+  async function (req, res) {
+    if (req.user.role === "nurse") {
+      return res.status(403).json({ error: "Your role is not allowed to do this" });
+    }
+    var body = req.body || {};
+    if (!body.patientId || !body.alertId || !body.scheduledFor) {
+      return res.status(400).json({ error: "patientId, alertId and scheduledFor are required" });
+    }
+    try {
+      var pool = require("./db");
+      var apptId = uuidv4();
+      await pool.query(
+        "INSERT INTO appointment(appointment_id,patient_id,psychologist_id,alert_id,scheduled_for,location,kind,status) " +
+        "VALUES($1,$2,$3,$4,$5,'Gikomero HC','session','scheduled')",
+        [apptId, body.patientId, req.user.staffId, body.alertId, body.scheduledFor]
+      );
+      await pool.query("UPDATE risk_alert SET status='acknowledged' WHERE alert_id=$1", [body.alertId]);
+      await require("./audit").logAccess(req.user.staffId, "book_appointment", "appointment", apptId);
+      res.json({ appointmentId: apptId });
+    } catch (e) {
+      res.status(500).json({ error: "Database error: " + e.message });
+    }
+  }
+);
 
 if (require.main === module) {
   app.listen(PORT, function () {
