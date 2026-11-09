@@ -35,5 +35,6 @@ DO $$ BEGIN
     ALTER TABLE patient ADD COLUMN facility_id TEXT NOT NULL DEFAULT 'GIK-01';
   END IF;
 END $$;
-
+-- Numbered patient codes: P-0001, P-0002, ...
+CREATE SEQUENCE IF NOT EXISTS patient_code_seq START 1;
 SELECT 'migration done' AS result;
