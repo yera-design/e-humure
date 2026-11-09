@@ -162,7 +162,27 @@ app.post("/appointments", auth.requireLogin, auth.requirePermission("read_screen
     }
   }
 );
-
+// GET /appointments: the psychologist sees the appointments they booked.
+app.get("/appointments", auth.requireLogin, auth.requirePermission("read_screening_details"),
+  async function (req, res) {
+    if (req.user.role === "nurse") {
+      return res.status(403).json({ error: "Your role is not allowed to do this" });
+    }
+    try {
+      var pool = require("./db");
+      var rows = await pool.query(
+        "SELECT appointment_id, patient_id, scheduled_for, location, status " +
+        "FROM appointment WHERE psychologist_id = $1 ORDER BY scheduled_for ASC",
+        [req.user.staffId]
+      );
+      await require("./audit").logAccess(req.user.staffId, "read_appointments", "appointment", "all");
+      res.json(rows.rows);
+    } catch (e) {
+      console.error("APPOINTMENTS ERROR:", e.message);
+      res.status(500).json({ error: "Database error" });
+    }
+  }
+);
 if (require.main === module) {
   app.listen(PORT, function () {
     console.log("e-Humure backend listening on http://localhost:" + PORT);
