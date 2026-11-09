@@ -82,6 +82,7 @@ function saveScreening(stage, answers) {
     .then(function (data) {
       state.saved = data.error ? "Not saved: " + data.error : "Saved to the database.";
       render();
+      if (typeof loadScreenings === "function") loadScreenings();
     })
     .catch(function () {
       state.saved = "Not saved: cannot reach the backend.";
