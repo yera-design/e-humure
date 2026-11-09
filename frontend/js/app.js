@@ -53,12 +53,40 @@ function onQuickDone(answers) {
     state.step = "result";
   }
   render();
+  if (!quick.positive) saveScreening("quick", answers);
 }
 
 function onFullDone(items) {
   state.result = scoreFullQuestionnaire(items);
   state.step = "result";
   render();
+  saveScreening("full", items);
+}
+
+// Sends the result to the backend so it is saved in the database.
+// It only runs on the nurse page, which has the patient code box and a login token.
+function saveScreening(stage, answers) {
+  var codeBox = document.getElementById("patient-code");
+  var token = sessionStorage.getItem("ehumure_token");
+  if (!codeBox || !token) return;
+  if (!codeBox.value.trim()) {
+    state.saved = "Not saved: enter a patient code first.";
+    return render();
+  }
+  fetch("http://localhost:4000/score", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+    body: JSON.stringify({ stage: stage, answers: answers, patientId: codeBox.value.trim() })
+  })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      state.saved = data.error ? "Not saved: " + data.error : "Saved to the database.";
+      render();
+    })
+    .catch(function () {
+      state.saved = "Not saved: cannot reach the backend.";
+      render();
+    });
 }
 
 function startOver() {
@@ -115,6 +143,13 @@ function showResult(box, result) {
   note.className = "note";
   note.textContent = text(UI_TEXT.notDiagnosis);
   card.appendChild(note);
+
+  if (state.saved) {
+    var saved = document.createElement("p");
+    saved.className = "note";
+    saved.textContent = state.saved;
+    card.appendChild(saved);
+  }
 
   card.appendChild(restartButton());
   box.appendChild(card);
