@@ -129,6 +129,7 @@ app.get("/alerts", auth.requireLogin, auth.requirePermission("read_screening_det
       });
       res.json(out);
     } catch (e) {
+      console.error("ALERTS ERROR:", e.message);
       res.status(500).json({ error: "Database error" });
     }
   }
