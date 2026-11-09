@@ -20,8 +20,14 @@ function signIn() {
     .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
     .then(function (out) {
       if (!out.ok) return say(out.data.error, true);
-      sessionStorage.setItem("ehumure_token", out.data.token);
+            sessionStorage.setItem("ehumure_token", out.data.token);
+      sessionStorage.setItem("ehumure_role", out.data.role);
+      sessionStorage.setItem("ehumure_name", out.data.name);
       say("Signed in as " + out.data.name + " (" + out.data.role + ")", false);
+
+      // Send each role to their own page.
+      var pages = { nurse: "nurse.html", psychologist: "psychologist.html", desk: "desk.html" };
+      if (pages[out.data.role]) window.location.href = pages[out.data.role];
     })
     .catch(function () { say("Cannot reach the backend. Run npm start in backend first.", true); });
 }
