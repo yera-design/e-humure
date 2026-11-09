@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>e-Humure — psychologist</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>e-Humure — psychologist dashboard</h1>
+    <p class="note" id="welcome"></p>
+    <p class="note"><a href="login.html">Sign out</a></p>
+  </div>
+  <div id="alert-list"></div>
+  <div id="alert-detail" style="display:none"></div>
+  <script src="js/dashboard.js"></script>
+  <script>
+    var name = sessionStorage.getItem("ehumure_name");
+    var role = sessionStorage.getItem("ehumure_role");
+    if (!name || role !== "psychologist") window.location.href = "login.html";
+    document.getElementById("welcome").textContent = "Signed in as " + name;
+  </script>
+</body>
+</html>

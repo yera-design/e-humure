@@ -38,3 +38,4 @@ function checkRole() {
 
 document.getElementById("signin").onclick = signIn;
 document.getElementById("check").onclick = checkRole;
+
