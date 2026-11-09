@@ -107,7 +107,23 @@ app.post("/patients", auth.requireLogin, auth.requirePermission("create_patient"
     res.status(500).json({ error: "Database error" });
   }
 });
-
+// GET /screenings: the nurse sees the screenings they recorded.
+app.get("/screenings", auth.requireLogin, auth.requirePermission("record_screening"),
+  async function (req, res) {
+    try {
+      var pool = require("./db");
+      var rows = await pool.query(
+        "SELECT patient_id, stage, total_score, item9_flag, screened_at " +
+        "FROM screening WHERE staff_id = $1 ORDER BY screened_at DESC LIMIT 50",
+        [req.user.staffId]
+      );
+      res.json(rows.rows);
+    } catch (e) {
+      console.error("SCREENINGS ERROR:", e.message);
+      res.status(500).json({ error: "Database error" });
+    }
+  }
+);
 // GET /alerts: psychologist sees open alerts.
 app.get("/alerts", auth.requireLogin, auth.requirePermission("read_screening_details"),
   async function (req, res) {
