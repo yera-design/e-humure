@@ -15,7 +15,7 @@
     <h1>e-Humure</h1>
     <p class="note" id="welcome"></p>
         <label for="patient-code">Patient code (no names)</label>
-    <input id="patient-code" placeholder="e.g. P-SEED-001">
+    <input id="patient-code" placeholder="Filled in automatically" readonly>
     <button type="button" id="start-screen">Start screening</button>
     <h2>New patient</h2>
     <input id="reg-age" type="number" placeholder="Age">
@@ -30,6 +30,11 @@
     <p class="note"><a href="login.html">Sign out</a></p>
   </div>
   <div id="screen" style="display:none"></div>
+  <div class="card">
+    <h2>My screenings</h2>
+    <div id="screening-list" class="note">Loading...</div>
+    <button type="button" id="scr-refresh" class="secondary">Refresh</button>
+  </div>
   <script src="../backend/scoring.js"></script>
   <script src="questions.js"></script>
   <script src="js/step-consent.js"></script>
@@ -61,8 +66,51 @@
       })
         .then(function (res) { return res.json(); })
         .then(function (d) {
-          if (d.error) { msg.textContent = d.error; return; }
-          document.getElementById("start-screen").onclick = updateScreen;
+          if (d.error) { msg.textContent = d.error; return; 
+              function loadScreenings() {
+      var box = document.getElementById("screening-list");
+      fetch("http://localhost:4000/screenings", {
+        headers: { Authorization: "Bearer " + sessionStorage.getItem("ehumure_token") }
+      })
+        .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
+        .then(function (out) {
+          if (!out.ok) { box.textContent = out.data.error; return; }
+          if (out.data.length === 0) { box.textContent = "No screenings yet."; return; }
+          box.innerHTML = "";
+          var total = document.createElement("p");
+          total.style.fontWeight = "bold";
+          total.textContent = "Total screened: " + out.data.length;
+          box.appendChild(total);
+          out.data.forEach(function (s) {
+            var item = document.createElement("div");
+            item.style.border = "1px solid #d8e0e6";
+            item.style.borderRadius = "8px";
+            item.style.padding = "12px";
+            item.style.margin = "10px 0";
+            item.style.cursor = "pointer";
+            var title = document.createElement("strong");
+            title.textContent = "Patient " + s.patient_id;
+            var when = document.createElement("div");
+            when.textContent = new Date(s.screened_at).toLocaleString();
+            var detail = document.createElement("div");
+            detail.textContent = s.stage === "quick"
+              ? "Quick screen"
+              : "Full screen, score " + s.total_score + (s.item9_flag ? " — EMERGENCY" : "");
+            item.appendChild(title);
+            item.appendChild(when);
+            item.appendChild(detail);
+            item.onclick = function () {
+              document.getElementById("patient-code").value = s.patient_id;
+              updateScreen();
+              window.scrollTo(0, 0);
+            };
+            box.appendChild(item);
+          });
+        })
+        .catch(function () { box.textContent = "Cannot reach the backend."; });
+    }
+    document.getElementById("scr-refresh").onclick = loadScreenings;
+    loadScreenings();
                     updateScreen();
           msg.textContent = "Patient code: " + d.patientId + ". Write it down.";
         })
