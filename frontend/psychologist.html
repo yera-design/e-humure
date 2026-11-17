@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>e-Humure — psychologist</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>e-Humure — psychologist dashboard</h1>
+    <p class="note" id="welcome"></p>
+    <p class="note"><a href="login.html">Sign out</a></p>
+  </div>
+  <div id="alert-list"></div>
+  <div id="alert-detail" style="display:none"></div>
+  <div class="card">
+  <h2>My appointments</h2>
+  <div id="appointment-list" class="note">Loading...</div>
+  <button type="button" id="appt-refresh" class="secondary">Refresh</button>
+  </div>
+  <script src="js/dashboard.js"></script>
+  <script>
+    var name = sessionStorage.getItem("ehumure_name");
+    var role = sessionStorage.getItem("ehumure_role");
+    if (!name || role !== "psychologist") window.location.href = "login.html";
+    document.getElementById("welcome").textContent = "Signed in as " + name;
+    
+    function loadAppointments() {
+      var box = document.getElementById("appointment-list");
+      fetch("http://localhost:4000/appointments", {
+        headers: { Authorization: "Bearer " + sessionStorage.getItem("ehumure_token") }
+      })
+        .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
+        .then(function (out) {
+          if (!out.ok) { box.textContent = out.data.error; return; }
+                    if (out.data.length === 0) { box.textContent = "Total appointments: 0. None booked yet."; return; }
+          box.innerHTML = "";
+          var total = document.createElement("p");
+          total.style.fontWeight = "bold";
+          total.textContent = "Total appointments: " + out.data.length;
+          box.appendChild(total);
+          out.data.forEach(function (a) {
+            var item = document.createElement("div");
+            item.style.border = "1px solid #d8e0e6";
+            item.style.borderRadius = "8px";
+            item.style.padding = "12px";
+            item.style.margin = "10px 0";
+            var title = document.createElement("strong");
+            title.textContent = "Patient " + a.patient_id;
+            var when = document.createElement("div");
+            when.textContent = new Date(a.scheduled_for).toLocaleString();
+            var phone = document.createElement("div");
+            phone.textContent = "Phone: " + a.phone;
+            var where = document.createElement("div");
+            where.textContent = a.location + " (" + a.status + ")";
+            item.appendChild(title);
+            item.appendChild(when);
+            item.appendChild(phone);
+            item.appendChild(where);
+            box.appendChild(item);
+          });
+        })
+        .catch(function () { box.textContent = "Cannot reach the backend."; });
+    }
+    document.getElementById("appt-refresh").onclick = loadAppointments;
+    loadAppointments();
+  </script>
+</body>
+</html>

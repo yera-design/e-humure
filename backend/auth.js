@@ -5,7 +5,11 @@ var SECRET = process.env.JWT_SECRET || "ehumure-sprint1-demo-secret";
 var SAME_LOGIN_ERROR = "Invalid username or password";
 
 function createToken(user) {
-  return jwt.sign({ username: user.username, role: user.role }, SECRET, { expiresIn: "8h" });
+  return jwt.sign({
+    username: user.name,
+    staffId: user.staff_id,
+    role: user.role
+}, SECRET, { expiresIn: "8h" });
 }
 
 // Reads "Authorization: Bearer <token>" and puts the user on the request.
