@@ -99,10 +99,6 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
 .emergency-border {
   border: 3px solid var(--warn);
 }
-/* item9_flag is true when the patient reports thoughts of self-harm. */
- ==========================================================================
-   09  Status and messaging
-   ========================================================================== */
 
 .status {
   margin: 14px 0 0;
@@ -256,9 +252,7 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
 .search-start-button { justify-self: start; margin-top: 8px; }
 
 
-/* ==========================================================================
-   11  Statistics
-   ========================================================================== */
+
 
 .stat-row {
   display: grid;
@@ -313,7 +307,7 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
 
 
 /* ==========================================================================
-   12  Screening flow
+    12  Screening flow
    ========================================================================== */
 
 .question-text {
