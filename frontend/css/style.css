@@ -100,3 +100,280 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
   border: 3px solid var(--warn);
 }
 /* item9_flag is true when the patient reports thoughts of self-harm. */
+ ==========================================================================
+   09  Status and messaging
+   ========================================================================== */
+
+.status {
+  margin: 14px 0 0;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--brand);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.status:empty { display: none; }
+
+.status.error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 650;
+}
+
+.error { color: var(--danger); font-weight: 650; }
+
+.emergency {
+  margin: 16px 0;
+  padding: 15px 17px;
+  border: 2px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.risk {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.risk.moderate { background: var(--warn-soft); color: var(--warn); }
+.risk.high { background: var(--danger-soft); color: var(--danger); }
+
+.case-transferred {
+  margin: 14px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--warn);
+  border-left: 4px solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+}
+
+.case-transferred strong {
+  display: block;
+  color: var(--warn);
+  font-size: 14px;
+  letter-spacing: .02em;
+}
+
+.case-transferred p { margin: 6px 0 0; color: var(--ink); }
+
+
+/* ==========================================================================
+   10  Record lists
+   One card shape for pending screenings, completed screenings, alerts,
+   appointments, staff requests, facility requests and audit entries.
+   ========================================================================== */
+
+.list-card {
+  margin: 12px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.list-card h2,
+.list-card h3 { margin-bottom: 4px; font-size: 16px; }
+
+.list-card p { margin-bottom: 6px; font-size: 14px; }
+
+.list-card ul { margin: 0; padding-left: 20px; font-size: 14px; }
+.list-card li { margin-bottom: 3px; }
+
+.list-card button,
+.list-card .button {
+  min-height: 38px;
+  margin: 8px 8px 0 0;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.list-card input,
+.list-card select,
+.list-card textarea { margin-top: 4px; }
+
+.list-card > label { display: block; margin-top: 10px; }
+
+/* Severity rails. These apply to .list-card rows and to the full-width
+   .card used for one alert, which otherwise has a plain 1px border. */
+.alert-emergency,
+.alert-high,
+.alert-moderate,
+.result-low,
+.result-moderate,
+.result-high { border-left-style: solid; border-left-width: 4px; }
+
+.alert-emergency,
+.alert-high,
+.result-high { border-left-color: var(--danger); }
+
+.alert-moderate,
+.result-moderate { border-left-color: var(--warn); }
+
+.result-low { border-left-color: var(--ok); }
+
+.search-results {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+}
+
+.search-results h3,
+.search-results p { margin: 0; }
+
+.screening-result-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.result-emergency {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.search-start-button { justify-self: start; margin-top: 8px; }
+
+
+/* ==========================================================================
+   11  Statistics
+   ========================================================================== */
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.stat .feature-icon { grid-area: 1 / 1; margin: 0; }
+.stat .muted { grid-area: 1 / 2; font-size: 14px; font-weight: 600; }
+
+.stat strong {
+  grid-area: 2 / 1 / 3 / -1;
+  color: var(--ink-strong);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.step-number {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.steps,
+.roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--gap);
+}
+
+
+/* ==========================================================================
+   12  Screening flow
+   ========================================================================== */
+
+.question-text {
+  margin: 14px 0 4px;
+  color: var(--ink-strong);
+  font-size: clamp(20px, 3vw, 26px);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -.015em;
+}
+
+.progress {
+  height: 8px;
+  margin: 18px 0 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+  transition: width .2s ease;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.option:hover { background: var(--surface-2); }
+
+.option:has(input:checked) {
+  border-color: var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand);
+  background: var(--brand-soft);
+}
+
+.patient-code {
+  display: block;
+  margin: 6px 0 10px;
+  color: var(--brand);
+  font-size: clamp(26px, 5vw, 34px);
+  font-weight: 800;
+  letter-spacing: .08em;
+}
