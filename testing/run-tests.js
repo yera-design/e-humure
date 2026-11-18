@@ -29,12 +29,14 @@ function actualFor(patient) {
 
 var expected = readExpected(csv);
 var correct = 0;
+var wrong = 0;
 var notFilled = [];
 
 patients.forEach(function (patient) {
   var want = expected[patient.id];
   if (!want) {
     console.log(patient.id + ": missing from expected-results.csv");
+    wrong += 1;
     return;
   }
   if (!want.filled) {
@@ -47,10 +49,14 @@ patients.forEach(function (patient) {
   if (want.risk !== got.risk) problems.push("risk expected " + want.risk + ", code says " + got.risk);
   if (want.emergency !== got.emergency) problems.push("emergency expected " + want.emergency + ", code says " + got.emergency);
   if (problems.length === 0) correct += 1;
-  else console.log(patient.id + ": " + problems.join(" | "));
+  else {
+    wrong += 1;
+    console.log(patient.id + ": " + problems.join(" | "));
+  }
 });
 
 if (notFilled.length) {
   console.log("Not filled in yet (" + notFilled.length + "): " + notFilled.join(", "));
 }
 console.log(correct + " of " + patients.length + " patients scored correctly");
+if (wrong > 0) process.exit(1);
