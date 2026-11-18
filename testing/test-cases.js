@@ -23,10 +23,18 @@ var quickYes = scoring.scoreQuickQuestions([true, false]);
 assert.strictEqual(quickYes.positive, true);
 assert.strictEqual(quickYes.next, "phq9");
 
-assert.strictEqual(scoring.scoreFullQuestionnaire(build(4, 0)).risk, "low");
-assert.strictEqual(scoring.scoreFullQuestionnaire(build(5, 0)).risk, "moderate");
-assert.strictEqual(scoring.scoreFullQuestionnaire(build(9, 0)).risk, "moderate");
-assert.strictEqual(scoring.scoreFullQuestionnaire(build(10, 0)).risk, "high");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(4, 0)).severity, "minimal");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(5, 0)).severity, "mild");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(9, 0)).severity, "mild");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(10, 0)).severity, "moderate");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(14, 0)).severity, "moderate");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(15, 0)).severity, "moderately_severe");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(19, 0)).severity, "moderately_severe");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(20, 0)).severity, "severe");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(9, 0)).risk, "low");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(10, 0)).risk, "moderate");
+assert.strictEqual(scoring.scoreFullQuestionnaire(build(15, 0)).risk, "high");
+
 
 var selfHarm = scoring.scoreFullQuestionnaire(build(0, 1));
 assert.strictEqual(selfHarm.total, 1);
