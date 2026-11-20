@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07192b" media="(prefers-color-scheme: dark)">
+  <script>(function(){try{var t=localStorage.getItem('ehumure_theme');if(t)document.documentElement.dataset.theme=t;else if(matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='dark'}catch(e){}})()</script>
+  <title>Request staff access | e-Humure</title>
+  <link rel="icon" href="assets/ehumure-mark.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="page-shell topbar-inner">
+    <a class="wordmark" href="welcome.html">
+      <span class="brand-art"><img src="assets/ehumure-mark.png" alt=""></span>
+      <span class="brand-copy">
+        <strong>e-Humure</strong>
+        <small data-rw="Umubiri muzima. Umutima utuje. Ejo heza.">Healthy Body. Peaceful Mind. Better Tomorrow.</small>
+      </span>
+    </a>
+    <div class="top-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-shell-lang="en" aria-pressed="true">English</button>
+        <button class="secondary" type="button" data-shell-lang="rw" aria-pressed="false">Kinyarwanda</button>
+      </div>
+      <button class="theme-toggle" type="button" data-theme-toggle>Theme</button>
+    </div>
+  </div>
+</header>
+
+<main class="page-shell main">
+  <section class="card narrow">
+    <p class="eyebrow">Staff access</p>
+    <h1>Request an account</h1>
+    <p class="note">Choose your district and facility. The facility administrator reviews your request before you can sign in. If your facility isn't listed, ask your system administrator to add it.</p>
+
+    <div class="field">
+      <label for="name">Full name</label>
+      <input id="name" autocomplete="name" maxlength="120" required>
+    </div>
+    <div class="field">
+      <label for="contact">Rwanda mobile number</label>
+      <input id="contact" type="tel" inputmode="numeric" autocomplete="tel-national" minlength="10" maxlength="10" pattern="0(72|73|78|79)[0-9]{7}" placeholder="0781234567" required>
+      <span class="small muted">Enter 10 digits beginning 072, 073, 078 or 079. Do not add +250.</span>
+    </div>
+    <div class="field">
+      <label for="role">Work role</label>
+      <select id="role">
+        <option value="ncd_nurse">NCD nurse</option>
+        <option value="psychiatric_nurse">Psychiatric nurse</option>
+        <option value="clinical_psychologist">Clinical psychologist</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="district">District</label>
+      <select id="district" required><option value="">Loading districts…</option></select>
+    </div>
+    <div class="field">
+      <label for="facility">Facility</label>
+      <select id="facility" required disabled><option value="">Choose a district first</option></select>
+    </div>
+    <div class="field">
+      <label for="username">Choose a username</label>
+      <input id="username" autocomplete="username" minlength="3" maxlength="32" required>
+    </div>
+    <div class="field">
+      <label for="password">Choose a password (12+ characters, letters and numbers)</label>
+      <input id="password" type="password" autocomplete="new-password" minlength="12" required>
+    </div>
+
+    <div class="actions"><button id="request" type="button">Submit request</button></div>
+    <p id="message" class="status" role="status" aria-live="polite"></p>
+    <div class="actions"><a href="login.html">Return to sign in</a></div>
+  </section>
+</main>
+
+<script src="js/shell-language.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/request-access.js"></script>
+</body>
+</html>
+
