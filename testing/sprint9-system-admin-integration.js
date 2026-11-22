@@ -1,4 +1,9 @@
-
+/*
+ * Database-backed Sprint 9 acceptance checks.
+ * Run once against a fresh, disposable PostgreSQL database whose name ends in
+ * _test, with the migrated app running. This suite creates records and does
+ * not delete them. Example: E_HUMURE_RUN_DB_TESTS=1 node testing/sprint9-system-admin-integration.js
+ */
 var assert = require("assert");
 require("../backend/config").loadEnvFile();
 var databaseUrl = process.env.DATABASE_URL || "";
