@@ -988,4 +988,8 @@ if (require.main === module) {
   process.on("SIGINT", function () { shutdown("SIGINT"); });
 }
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 module.exports = app;
