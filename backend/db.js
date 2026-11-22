@@ -1,17 +1,9 @@
+var config = require("./config");
+config.loadEnvFile();
+if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is missing; configure backend/.env");
+
 var pg = require("pg");
+var pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 10, idleTimeoutMillis: 30000 });
+pool.on("error", function (error) { console.error("database connection error:", error.message); });
 
-var pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL
-    || "postgresql://postgres:postgres@localhost:5432/ehumure"
-});
-// If the database connection drops, print the error but do not crash the server.
-pool.on("error", function (err) {
-  console.error("database connection error:", err.message);
-});
-
-module.exports = pool;
-// If the database connection drops, print the error but do not crash the server.
-pool.on("error", function (err) {
-  console.error("database connection error:", err.message);
-});
 module.exports = pool;
