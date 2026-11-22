@@ -1,14 +1,15 @@
 {
   "name": "ehumure-backend",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
-  "description": "e-Humure Sprint 2",
+  "description": "e-Humure backend: screening, routing, alerts, appointments and SMS",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "seed": "node seed.js",
-    "sync": "node sync.js",
-    "simulator": "node sms-simulator.js"
+    "simulator": "node sms-simulator.js",
+    "sms-worker": "node sms-worker.js",
+    "test": "node ../testing/run-all.js"
   },
   "dependencies": {
     "bcryptjs": "2.4.3",
