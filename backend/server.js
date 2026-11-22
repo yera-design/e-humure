@@ -173,7 +173,7 @@ app.post("/setup/initial-admin", async function (req, res) {
 });
 
 app.post("/staff-requests", async function (req, res) {
-OB  var body = req.body || {};
+  var body = req.body || {};
   var facilityId = String(body.facilityId || "").trim().toUpperCase();
   var fullName = String(body.fullName || "").trim();
   var contact = String(body.contact || "").trim();
