@@ -1,19 +1,27 @@
 CREATE TABLE staff (
   staff_id      UUID PRIMARY KEY,
   full_name     TEXT NOT NULL,
-  role          TEXT NOT NULL CHECK (role IN ('nurse', 'psychologist', 'desk')),
-  facility_id   TEXT NOT NULL,
+  role          TEXT NOT NULL CHECK (role IN ('nurse', 'facility_admin', 'ncd_nurse', 'psychiatric_nurse', 'clinical_psychologist', 'disabled')),
+  facility_id   TEXT,
   password_hash TEXT NOT NULL,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at	TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT staff_facility_assignment_check CHECK ((role = 'system_admin' AND facility_id IS NULL) OR (role <> 'system_admin' AND facility_id IS NOT NULL))
 );
 
 CREATE TABLE patient (
   patient_id       TEXT PRIMARY KEY,
   age              INTEGER NOT NULL CHECK (age BETWEEN 18 AND 120),
-  chronic_condition TEXT NOT NULL CHECK (chronic_condition IN ('diabetes', 'hypertension')),
+  chronic_condition TEXT NOT NULL,
+  chronic_condition_other TEXT,
   sector           TEXT NOT NULL,
   phone_enc        TEXT NOT NULL,
-  consent_given_at TIMESTAMPTZ
+  consent_given_at TIMESTAMPTZ,
+  CONSTRAINT patient_chronic_condition_check CHECK (
+    chronic_condition IN ('diabetes', 'hypertension', 'cardiovascular_disease', 'chronic_respiratory_disease', 'cancer', 'other')
+    AND ((chronic_condition = 'other' AND chronic_condition_other IS NOT NULL AND length(trim(chronic_condition_other)) BETWEEN 2 AND 120)
+     OR (chronic_condition <> 'other' AND chronic_condition_other IS NULL)
+     )
+  )
 );
 
 CREATE TABLE screening (
