@@ -1,10 +1,9 @@
-
-// Draws the 9 PHQ-9 questions. saved holds earlier picks so a language change loses nothing.
 function renderFull(box, saved, onPick, onDone) {
   box.innerHTML = "";
+  var index = state.fullIndex || 0;
 
-  var card = document.createElement("div");
-  card.className = "card";
+  var card = document.createElement("section");
+  card.className = "card enter";
 
   var title = document.createElement("h2");
   title.textContent = text(UI_TEXT.fullTitle);
@@ -15,49 +14,96 @@ function renderFull(box, saved, onPick, onDone) {
   stem.textContent = text(PHQ9_STEM);
   card.appendChild(stem);
 
-  PHQ9_QUESTIONS.forEach(function (q, i) {
-    var wrap = document.createElement("div");
-    wrap.className = "question";
+  var progress = document.createElement("div");
+  progress.className = "progress";
+  progress.setAttribute("role", "progressbar");
+  progress.setAttribute("aria-valuemin", "1");
+  progress.setAttribute("aria-valuemax", "9");
+  progress.setAttribute("aria-valuenow", String(index + 1));
 
-    var label = document.createElement("p");
-    label.textContent = (i + 1) + ". " + text(q);
-    wrap.appendChild(label);
+  var fill = document.createElement("span");
+  fill.style.width = ((index + 1) / 9 * 100) + "%";
+  progress.appendChild(fill);
+  card.appendChild(progress);
 
-    var options = document.createElement("div");
-    options.className = "options";
-    PHQ9_OPTIONS.forEach(function (opt) {
-      var option = document.createElement("label");
-      option.className = "option";
-      var input = document.createElement("input");
-      input.type = "radio";
-      input.name = "phq" + i;
-      input.checked = saved[i] === opt.value;
-      input.onchange = function () { onPick(i, opt.value); };
-      option.appendChild(input);
-      option.appendChild(document.createTextNode(opt.value + " " + text(opt)));
-      options.appendChild(option);
-    });
+  var count = document.createElement("p");
+  count.className = "small muted";
+  count.textContent = (LANGUAGE === "rw"
+    ? "Ikibazo " + (index + 1) + " kuri 9"
+    : "Question " + (index + 1) + " of 9");
+  card.appendChild(count);
 
-    wrap.appendChild(options);
-    card.appendChild(wrap);
+  var question = document.createElement("p");
+  question.className = "question-text";
+  question.textContent = text(PHQ9_QUESTIONS[index]);
+  card.appendChild(question);
+
+  var options = document.createElement("div");
+  options.className = "options";
+
+  PHQ9_OPTIONS.forEach(function (option) {
+    var label = document.createElement("label");
+    label.className = "option";
+
+    var input = document.createElement("input");
+    input.type = "radio";
+    input.name = "phq" + index;
+    input.checked = saved[index] === option.value;
+
+    input.onchange = function () {
+      onPick(index, option.value);
+      next.disabled = false;
+    };
+
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(text(option)));
+    options.appendChild(label);
   });
 
-  var error = document.createElement("p");
-  error.className = "error";
-  card.appendChild(error);
+  card.appendChild(options);
+
+  var saveStatus = document.createElement("p");
+  saveStatus.id = "draft-save-status";
+  saveStatus.className = "small muted";
+  saveStatus.setAttribute("aria-live", "polite");
+  saveStatus.textContent = state.draftStatus || "";
+  card.appendChild(saveStatus);
 
   var actions = document.createElement("div");
   actions.className = "actions";
-  var done = document.createElement("button");
-  done.textContent = text(UI_TEXT.seeResult);
-  done.onclick = function () {
-    if (saved.indexOf(null) !== -1) {
-      error.textContent = text(UI_TEXT.answerAll);
-      return;
+
+  if (index > 0) {
+    var back = document.createElement("button");
+    back.className = "secondary";
+    back.textContent = text(UI_TEXT.back);
+
+    back.onclick = function () {
+      state.fullIndex = index - 1;
+      saveDraft();
+      render();
+    };
+
+    actions.appendChild(back);
+  }
+
+  var next = document.createElement("button");
+  next.textContent = text(index === 8 ? UI_TEXT.seeResult : UI_TEXT.next);
+  next.disabled = saved[index] === null;
+
+  next.onclick = function () {
+    if (saved[index] === null) return;
+
+    if (index < 8) {
+      state.fullIndex = index + 1;
+      saveDraft();
+      render();
+    } else {
+      state.fullIndex = 0;
+      onDone(saved);
     }
-    onDone(saved);
   };
-  actions.appendChild(done);
+
+  actions.appendChild(next);
   card.appendChild(actions);
   box.appendChild(card);
 }
