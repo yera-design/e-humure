@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>e-Humure — desk</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>e-Humure</h1>
+    <p class="note" id="welcome"></p>
+    <p>Your role does not include access to screening results.</p>
+    <p class="note"><a href="login.html">Sign out</a></p>
+  </div>
+  <script>
+    var name = sessionStorage.getItem("ehumure_name");
+    var role = sessionStorage.getItem("ehumure_role");
+    if (!name || role !== "desk") window.location.href = "login.html";
+    document.getElementById("welcome").textContent = "Signed in as " + name;
+  </script>
+</body>
+</html>
