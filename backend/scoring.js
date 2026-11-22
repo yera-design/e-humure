@@ -19,16 +19,16 @@ function scoreQuickQuestions(answers) {
   };
 }
 
-// PHQ-9: 0-4 low, 5-9 moderate, 10+ high.
+// PHQ-9 standard severity bands. Operational alert risk remains a separate
+// workflow label: 0-9 low, 10-14 moderate, 15+ high.
 function scoreFullQuestionnaire(items) {
   var ok = Array.isArray(items) && items.length === FULL_COUNT &&
     items.every(function (n) { return Number.isInteger(n) && n >= 0 && n <= 3; });
   if (!ok) throw new Error("answers must be an array of 9 whole numbers from 0 to 3");
 
   var total = items.reduce(function (sum, n) { return sum + n; }, 0);
-  var risk = "low";
-  if (total >= 10) risk = "high";
-  else if (total >= 5) risk = "moderate";
+  var severity = total <= 4 ? "minimal" : total <= 9 ? "mild" : total <= 14 ? "moderate" : total <= 19 ? "moderately_severe" : "severe";
+  var risk = total >= 15 ? "high" : total >= 10 ? "moderate" : "low";
 
   // Item 9 above 0 beats the total: always high and always an emergency.
   var emergency = items[ITEM9_INDEX] > 0;
@@ -42,6 +42,7 @@ function scoreFullQuestionnaire(items) {
     stage: "full",
     positive: risk !== "low",
     risk: risk,
+    severity: severity,
     total: total,
     emergency: emergency,
     next: next

@@ -1,98 +1,397 @@
+/* ==========================================================================
+   e-Humure design system
+   --------------------------------------------------------------------------
+   One stylesheet for every screen. Clinical white in light mode, deep clinical
+   navy in dark mode. Nothing here is page-specific unless it sits in the
+   "Page compositions" section near the bottom.
+
+   Contents
+     01  Design tokens
+     02  Reset and base
+     03  Typography
+     04  Layout primitives
+     05  Application shell (top bar, offline banner, footer)
+     06  Buttons and links
+     07  Forms
+     08  Cards and panels
+     09  Status and messaging
+     10  Record lists
+     11  Statistics
+     12  Screening flow
+     13  Follow-up, notes and appointments
+     14  Page compositions (home, sign in)
+     15  Responsive
+     16  Motion and print
+   ========================================================================== */
+
+
+/* ==========================================================================
+   01  Design tokens
+   Every colour, radius and shadow used anywhere in the app is declared once
+   here. Components never hard-code a colour.
+   ========================================================================== */
 
 :root {
-  --ink: #15202b;
-  --muted: #5a6b7a;
-  --line: #d8e0e6;
-  --brand: #0f6b5c;
-  --brand-dark: #0a5247;
-  --warn: #b3261e;
-  --page: #f4f7f8;
+  color-scheme: light;
+
+  /* Surfaces */
+  --page: #f2f6fa;
+  --surface: #ffffff;
+  --surface-2: #eef4fa;
+  --surface-3: #e2ecf6;
+
+  /* Text */
+  --ink: #163a5c;
+  --ink-strong: #0a2440;
+  --muted: #55738e;
+  --on-brand: #ffffff;
+
+  /* Lines */
+  --line: #d7e3ef;
+  --line-strong: #bed1e3;
+
+  /* Brand */
+  --brand: #1263c0;
+  --brand-dark: #0d4e9b;
+  --brand-soft: #e4eefa;
+  --accent: #2fb4d1;
+  --link: #0d58ab;
+
+  /* Clinical signal colours */
+  --danger: #b3261e;
+  --danger-soft: #fdecea;
+  --warn: #8a5308;
+  --warn-soft: #fdf3e2;
+  --ok: #106b4c;
+  --ok-soft: #e4f4ee;
+
+  /* Decoration: the lattice used on the hero, the sign-in panel and the
+     accent band that sits on top of every card. */
+  --lattice-bg: #d8ecf8;
+  --lattice-ink: #1570b8;
+  --lattice-light: #ffffff;
+
+  /* Geometry */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --band: 7px;
+  --shell: 1140px;
+  --gutter: clamp(16px, 4vw, 28px);
+  --pad: clamp(18px, 3vw, 28px);
+  --gap: clamp(14px, 2vw, 20px);
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(13, 46, 78, .06);
+  --shadow: 0 4px 16px rgba(13, 46, 78, .07);
+  --shadow-lg: 0 18px 44px rgba(10, 36, 64, .16);
+
+  /* Focus */
+  --focus: #0d58ab;
 }
 
-* { box-sizing: border-box; }
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --page: #07192b;
+  --surface: #0f2a42;
+  --surface-2: #14334e;
+  --surface-3: #1b3f5d;
+
+  --ink: #dce9f4;
+  --ink-strong: #f2f8fd;
+  --muted: #a3bed6;
+  --on-brand: #ffffff;
+
+  --line: #1f4463;
+  --line-strong: #2b587c;
+
+  --brand: #2b86e0;
+  --brand-dark: #1e6cbd;
+  --brand-soft: #12304c;
+  --accent: #4ec7e2;
+  --link: #7cc2f5;
+
+  --danger: #ff9d94;
+  --danger-soft: #3a1d1b;
+  --warn: #f0b95a;
+  --warn-soft: #392c13;
+  --ok: #68d9ab;
+  --ok-soft: #10342a;
+
+  --lattice-bg: #0a2a44;
+  --lattice-ink: #1d7fb8;
+  --lattice-light: #a9cfe4;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow: 0 4px 16px rgba(0, 0, 0, .34);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, .45);
+
+  --focus: #7cc2f5;
+}
+
+
+/* ==========================================================================
+   02  Reset and base
+   ========================================================================== */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html {
+  min-width: 320px;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
-  padding: 16px;
+  min-height: 100vh;
   background: var(--page);
   color: var(--ink);
-  font-family: "Segoe UI", Arial, sans-serif;
-  font-size: 17px;
-  line-height: 1.5;
+  font: 400 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: background-color .2s ease, color .2s ease;
 }
 
-.card {
-  max-width: 560px;
-  margin: 0 auto 16px;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 20px;
+img { max-width: 100%; height: auto; }
+
+[hidden] { display: none !important; }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-h1 { font-size: 22px; margin: 0 0 4px; }
-h2 { font-size: 19px; margin: 0 0 12px; }
 
-.note { color: var(--muted); font-size: 15px; }
+/* ==========================================================================
+   03  Typography
+   ========================================================================== */
 
-.lang-switch { display: flex; gap: 8px; margin-bottom: 14px; }
-.lang-switch button { padding: 8px 14px; font-size: 15px; }
+h1, h2, h3, h4, p, ul, ol { margin-top: 0; }
 
-.question {
-  border-top: 1px solid var(--line);
-  padding: 14px 0 4px;
+h1 {
+  margin-bottom: 10px;
+  color: var(--ink-strong);
+  font-size: clamp(27px, 3.4vw, 38px);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -.028em;
 }
 
-.question:first-of-type { border-top: 0; }
+h2 {
+  margin-bottom: 10px;
+  color: var(--ink-strong);
+  font-size: clamp(19px, 2.2vw, 23px);
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: -.018em;
+}
 
-.options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+h3 {
+  margin-bottom: 6px;
+  color: var(--ink-strong);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
 
-label.option {
+p { margin-bottom: 12px; }
+p:last-child { margin-bottom: 0; }
+
+.eyebrow {
+  margin-bottom: 6px;
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.note,
+.muted { color: var(--muted); }
+
+.small { font-size: 14px; }
+
+strong { font-weight: 700; }
+
+
+/* ==========================================================================
+   04  Layout primitives
+   ========================================================================== */
+
+.page-shell {
+  width: min(var(--shell), 100% - (var(--gutter) * 2));
+  margin-inline: auto;
+}
+
+.main { padding: clamp(20px, 3vw, 32px) 0 clamp(48px, 7vw, 72px); }
+
+.grid { display: grid; gap: var(--gap); }
+
+.narrow { width: min(620px, 100%); margin: clamp(20px, 4vw, 40px) auto; }
+
+.actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+
+/* ==========================================================================
+   05  Application shell
+   ========================================================================== */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar-inner {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 10px 12px;
-  cursor: pointer;
-  background: #fff;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 68px;
+  padding: 10px 0;
 }
 
-button {
-  font: inherit;
-  padding: 12px 18px;
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 0;
   border: 0;
-  border-radius: 8px;
-  background: var(--brand);
-  color: #fff;
-  cursor: pointer;
+  background: none;
+  color: var(--ink-strong);
+  text-decoration: none;
 }
 
-button:hover { background: var(--brand-dark); }
-button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+.wordmark:hover { background: none; }
 
-.actions { display: flex; gap: 10px; margin-top: 18px; }
+.brand-art {
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--surface);
+}
 
-.result-low { border-left: 6px solid var(--brand); padding-left: 12px; }
-.result-moderate { border-left: 6px solid #c07a00; padding-left: 12px; }
-.result-high { border-left: 6px solid var(--warn); padding-left: 12px; }
+.brand-art img { width: 100%; height: 100%; object-fit: contain; }
 
-.emergency {
-  margin-top: 14px;
-  border: 2px solid var(--warn);
-  border-radius: 8px;
-  padding: 12px;
-  color: var(--warn);
+.brand-copy {
+  display: grid;
+  gap: 2px;
+  line-height: 1.15;
+}
+
+.brand-copy strong {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.brand-copy small {
+  color: var(--muted);
+  font-size: 10px;
   font-weight: 600;
 }
 
-.error { color: var(--warn); margin-top: 10px; }
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
 
-/* Stack the answer buttons on narrow phone screens. */
-@media (max-width: 420px) {
-  .options { flex-direction: column; }
-  .actions { flex-direction: column; }
-  .actions button { width: 100%; }
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Segmented language switch */
+.lang-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.lang-switch button {
+  min-height: 34px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lang-switch button:hover {
+  background: transparent;
+  color: var(--ink);
+}
+
+.lang-switch button:not(.secondary) {
+  background: var(--surface);
+  color: var(--ink-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.top-actions > button,
+.top-actions > .button {
+  min-height: 38px;  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.role-badge,
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--ink-strong);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.offline {
+  display: none;
+  padding: 9px var(--gutter);
+  background: var(--warn-soft);
+  border-bottom: 1px solid var(--warn);
+  color: var(--warn);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.offline.visible { display: block; }
+
+.footer {
+  padding: 22px 0 32px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
 }
 
 /* Red border around the entire card when a patient flags self-harm. */
@@ -100,56 +399,343 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
   border: 3px solid var(--warn);
 }
 
-.status {
-  margin: 14px 0 0;
-  padding: 11px 14px;
+.nurse-dashboard-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.nurse-dashboard-heading h1 { margin-bottom: 6px; }
+.nurse-dashboard-heading p { margin-bottom: 0; }
+
+.appointment-notes,
+.follow-up-booking {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 14px 16px;
   border: 1px solid var(--line);
-  border-left: 4px solid var(--brand);
   border-radius: var(--radius-sm);
   background: var(--surface-2);
-  color: var(--ink);
-  font-size: 15px;
 }
 
-.status:empty { display: none; }
+.appointment-notes h3,
+.appointment-notes p { margin: 0; }
 
-.status.error {
-  border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
-  font-weight: 650;
+.appointment-note-list { display: grid; gap: 6px; }
+.appointment-note-list p { margin: 0; font-size: 14px; }
+
+.appointment-notes label,
+.follow-up-booking label { display: block; margin-top: 4px; }
+
+.appointment-notes button,
+.follow-up-booking button { justify-self: start; margin-top: 4px; }
+
+.visit-note-editor { display: grid; gap: 8px; padding-top: 8px; }
+
+
+/* ==========================================================================
+   14  Page compositions
+   ========================================================================== */
+
+/* -- Shared lattice artwork ---------------------------------------------- */
+.lattice {
+  background-color: var(--lattice-bg);
+  background-image:
+    linear-gradient(45deg, transparent 46%, var(--lattice-ink) 47%, var(--lattice-ink) 51%, transparent 52%),
+    linear-gradient(-45deg, transparent 46%, var(--lattice-ink) 47%, var(--lattice-ink) 51%, transparent 52%),
+    linear-gradient(45deg, transparent 47%, var(--lattice-light) 48%, var(--lattice-light) 51%, transparent 52%),
+    linear-gradient(-45deg, transparent 47%, var(--lattice-light) 48%, var(--lattice-light) 51%, transparent 52%);
+  background-size: 76px 76px;
+  background-position: 0 0, 0 0, 0 38px, 38px 0;
 }
 
-.error { color: var(--danger); font-weight: 650; }
+/* -- Home ----------------------------------------------------------------- */
+.home-shell { width: 100%; max-width: none; }
 
-.emergency {
-  margin: 16px 0;
-  padding: 15px 17px;
-  border: 2px solid var(--danger);
-  border-radius: var(--radius-sm);
-  background: var(--danger-soft);
-  color: var(--danger);
+.home-hero {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  align-items: center;
+  gap: clamp(28px, 5vw, 64px);
+  padding: clamp(38px, 6vw, 80px) max(var(--gutter), calc((100% - var(--shell)) / 2));
+  background: var(--surface-2);
+}
+
+.home-copy { max-width: 580px; }
+
+.home-copy h1 {
+  margin: 14px 0 18px;
+  font-size: clamp(34px, 4.6vw, 56px);
+  line-height: 1.06;
+  letter-spacing: -.04em;
+}
+
+.home-copy > p:not(.small) {
+  margin-bottom: 24px;
+  color: var(--muted);
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.6;
+}
+
+.home-copy .button { min-height: 52px; padding: 13px 26px; font-size: 16px; }
+
+.home-tagline { margin: 18px 0 0; color: var(--muted); font-size: 15px; }
+
+.hero-logo {
+  display: grid;
+  place-items: center;
+  min-height: clamp(300px, 36vw, 440px);
+  padding: clamp(20px, 3vw, 34px);
+  border-radius: var(--radius);
+}
+
+.home-logo-card,
+.login-brand-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(84%, 420px);
+  padding: clamp(22px, 3vw, 34px);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.home-logo-card img,
+.login-brand-card img { width: min(62%, 210px); }
+
+.home-logo-card strong,
+.login-brand-card h2 {
+  margin: 10px 0 2px;
+  color: var(--ink-strong);
+  font-size: clamp(23px, 3vw, 32px);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.home-logo-card span,
+.login-brand-card p {
+  max-width: 340px;
+  margin: 0;
+  color: var(--muted);
   font-size: 16px;
-  font-weight: 750;
-  line-height: 1.5;
 }
 
-.risk {
+.home-page .section { width: min(var(--shell), 100% - (var(--gutter) * 2)); margin-inline: auto; }
+
+/* -- Sign in -------------------------------------------------------------- */
+.login-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 69px);
+}
+
+.login-brand-panel {
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 4vw, 48px);
+}
+
+.login-brand-card { width: min(520px, 100%); min-height: 380px; }
+
+.login-form-area {
+  display: grid;
+  place-items: center;
+  padding: clamp(28px, 4vw, 56px) clamp(20px, 5vw, 72px);
+  background: var(--surface);
+}
+
+.login-form-card { width: min(560px, 100%); }
+.login-form-card h1 { font-size: clamp(32px, 3.6vw, 46px); }
+.login-form-card > .note { margin-bottom: 4px; font-size: 16px; }
+.login-form-card .field { margin: 16px 0; }
+.login-form-card input,
+.login-form-card select { min-height: 50px; }
+
+.login-submit { width: 100%; min-height: 52px; font-size: 16px; }
+
+.login-links {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0 16px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.login-links a,
+.login-links .button { width: 100%; min-height: 48px; }
+
+
+/* ==========================================================================
+   15  Responsive
+   Breakpoints follow the content, not device names:
+     1000px  two-column page compositions collapse
+     760px   dashboards go single column, the top bar stacks
+     430px   small phones: full-width actions, tighter chrome
+   ========================================================================== */
+
+@media (max-width: 1000px) {
+  .home-hero { grid-template-columns: 1fr; }
+  .hero-logo { order: -1; min-height: 280px; }
+  .login-layout { grid-template-columns: 1fr; min-height: 0; }
+  .login-brand-panel { min-height: 240px; padding: 28px 20px; background-size: 54px 54px; background-position: 0 0, 0 0, 0 27px, 27px 0; }
+  .login-brand-card { min-height: 0; }
+  .login-brand-card img { width: 120px; }
+}
+
+@media (max-width: 760px) {
+  :root { --band: 6px; }
+
+  .topbar-inner { min-height: 60px; }
+  .identity { order: 3; width: 100%; }
+  .top-actions { margin-left: auto; }
+  .brand-copy small { display: none; }
+
+  .nurse-dashboard-heading { flex-direction: column; align-items: stretch; }
+  .nurse-dashboard-heading > button { width: 100%; }
+
+  .screening-result-row { grid-template-columns: 1fr; align-items: start; gap: 4px; }
+  .card-visual { display: none; }
+  .registration-fields { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 430px) {
+  :root { --gutter: 14px; }
+
+  .options { grid-template-columns: 1fr; }
+  .actions { flex-direction: column; align-items: stretch; }
+  .actions button,
+  .actions .button,
+  .actions a { width: 100%; }
+
+  .lang-switch button { padding: 6px 10px; font-size: 12px; }
+  .top-actions > button,
+  .top-actions > .button { padding: 8px 11px; font-size: 13px; }
+
+  .home-logo-card,
+  .login-brand-card { width: 100%; }
+  .list-card button { width: 100%; margin-right: 0; }
+}
+
+
+
+.registration-fields {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0 18px;
+}
+
+.password-wrap { position: relative; display: flex; }
+.password-wrap input { padding-right: 82px; }
+
+.password-wrap button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--brand);
+  font-size: 14px;
+}
+
+.password-wrap button:hover {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+}
+
+/* Segmented control, used for the sign-in account type */
+.mode-switch {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 4px;
+  margin: 20px 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.mode-switch button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.mode-switch button:hover { background: transparent; color: var(--ink); }
+
+.mode-switch button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+
+/* ==========================================================================
+   08  Cards and panels
+   Every card carries the e-Humure lattice band across its top edge. That band
+   is the one piece of decoration in the app and it is defined once, here.
+   ========================================================================== */
+
+
+
+.card + .card { margin-top: var(--gap); }
+
+.feature-icon {
   display: inline-flex;
   align-items: center;
-  margin-bottom: 10px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--ok-soft);
-  color: var(--ok);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  color: var(--brand);
+  vertical-align: -4px;
 }
 
-.risk.moderate { background: var(--warn-soft); color: var(--warn); }
-.risk.high { background: var(--danger-soft); color: var(--danger); }
+.feature-icon svg { width: 100%; height: 100%; }
+
+.card-visual {
+  position: absolute;
+  top: calc(var(--band) + 18px);
+  right: 22px;
+  width: 118px;
+  height: 76px;
+  color: var(--brand);
+  opacity: .16;
+  pointer-events: none;
+}
+
+.card.has-visual > *:not(.card-visual) { position: relative; z-index: 1; }
+
+.privacy {
+  padding: clamp(26px, 4vw, 48px);
+  border-radius: var(--radius);
+  background: var(--brand-dark);
+  color: #ffffff;
+}
+
+.privacy h2 { color: #ffffff; }
+.privacy p { color: #d8e7f6; }
+.privacy .eyebrow { color: var(--accent); }
+.privacy a:not(.button) { background: #ffffff; color: var(--brand-dark); border-color: #ffffff; }
+
+.section { padding: clamp(24px, 4vw, 44px) 0; }
+
+.flow-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.flow-steps .pill { justify-content: center; }
+
 
 .case-transferred {
   margin: 14px 0;
@@ -169,62 +755,6 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
 
 .case-transferred p { margin: 6px 0 0; color: var(--ink); }
 
-
-/* ==========================================================================
-   10  Record lists
-   One card shape for pending screenings, completed screenings, alerts,
-   appointments, staff requests, facility requests and audit entries.
-   ========================================================================== */
-
-.list-card {
-  margin: 12px 0;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-}
-
-.list-card h2,
-.list-card h3 { margin-bottom: 4px; font-size: 16px; }
-
-.list-card p { margin-bottom: 6px; font-size: 14px; }
-
-.list-card ul { margin: 0; padding-left: 20px; font-size: 14px; }
-.list-card li { margin-bottom: 3px; }
-
-.list-card button,
-.list-card .button {
-  min-height: 38px;
-  margin: 8px 8px 0 0;
-  padding: 8px 14px;
-  font-size: 14px;
-}
-
-.list-card input,
-.list-card select,
-.list-card textarea { margin-top: 4px; }
-
-.list-card > label { display: block; margin-top: 10px; }
-
-/* Severity rails. These apply to .list-card rows and to the full-width
-   .card used for one alert, which otherwise has a plain 1px border. */
-.alert-emergency,
-.alert-high,
-.alert-moderate,
-.result-low,
-.result-moderate,
-.result-high { border-left-style: solid; border-left-width: 4px; }
-
-.alert-emergency,
-.alert-high,
-.result-high { border-left-color: var(--danger); }
-
-.alert-moderate,
-.result-moderate { border-left-color: var(--warn); }
-
-.result-low { border-left-color: var(--ok); }
-
 .search-results {
   display: grid;
   gap: 8px;
@@ -234,140 +764,37 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
 .search-results h3,
 .search-results p { margin: 0; }
 
-.screening-result-row {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-top: 1px solid var(--line);
-}
-
-.result-emergency {
-  border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-
 .search-start-button { justify-self: start; margin-top: 8px; }
 
-
-
-
-.stat-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--gap);
-  margin-bottom: var(--gap);
-}
-
-.stat {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  column-gap: 8px;
-  row-gap: 2px;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-}
-
-.stat .feature-icon { grid-area: 1 / 1; margin: 0; }
-.stat .muted { grid-area: 1 / 2; font-size: 14px; font-weight: 600; }
-
-.stat strong {
-  grid-area: 2 / 1 / 3 / -1;
-  color: var(--ink-strong);
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.step-number {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  margin-bottom: 14px;
-  border-radius: var(--radius-sm);
-  background: var(--brand);
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.steps,
-.roles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--gap);
-}
-
-
 /* ==========================================================================
-    12  Screening flow
+   16  Motion and print
    ========================================================================== */
 
-.question-text {
-  margin: 14px 0 4px;
-  color: var(--ink-strong);
-  font-size: clamp(20px, 3vw, 26px);
-  font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: -.015em;
+.enter { animation: enter .2s ease-out; }
+
+@keyframes enter {
+  from { opacity: .5; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
 
-.progress {
-  height: 8px;
-  margin: 18px 0 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--surface-3);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-.progress span {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--brand);
-  transition: width .2s ease;
-}
+@media print {
+  .topbar,
+  .offline,
+  .top-actions,
+  .footer,
+  button { display: none !important; }
 
-.options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 10px;
-  margin: 18px 0;
-}
-
-.option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 54px;
-  padding: 12px 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.option:hover { background: var(--surface-2); }
-
-.option:has(input:checked) {
-  border-color: var(--brand);
-  box-shadow: inset 0 0 0 1px var(--brand);
-  background: var(--brand-soft);
-}
-
-.patient-code {
-  display: block;
-  margin: 6px 0 10px;
-  color: var(--brand);
-  font-size: clamp(26px, 5vw, 34px);
-  font-weight: 800;
-  letter-spacing: .08em;
+  body { background: #ffffff; color: #000000; }
+  .card { box-shadow: none; border: 1px solid #999999; }
+  .card::before { display: none; }
 }

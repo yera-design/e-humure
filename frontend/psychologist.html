@@ -1,70 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>e-Humure — psychologist</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07192b" media="(prefers-color-scheme: dark)">
+  <script>(function(){try{var t=localStorage.getItem('ehumure_theme');if(t)document.documentElement.dataset.theme=t;else if(matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='dark'}catch(e){}})()</script>
+  <title>Specialist workspace | e-Humure</title>
+  <link rel="icon" href="assets/ehumure-mark.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="card">
-    <h1>e-Humure — psychologist dashboard</h1>
-    <p class="note" id="welcome"></p>
-    <p class="note"><a href="login.html">Sign out</a></p>
+
+<div class="offline" data-offline>You are offline. New alerts and appointments need a connection.</div>
+
+<header class="topbar">
+  <div class="page-shell topbar-inner">
+    <a class="wordmark" href="welcome.html">
+      <span class="brand-art"><img src="assets/ehumure-mark.png" alt=""></span>
+      <span class="brand-copy">
+        <strong>e-Humure</strong>
+        <small data-rw="Umubiri muzima. Umutima utuje. Ejo heza.">Healthy Body. Peaceful Mind. Better Tomorrow.</small>
+      </span>
+    </a>
+    <div class="identity"><span id="welcome"></span><span class="role-badge" data-rw="Inzobere mu mitekerereze">Clinical psychologist</span></div>
+    <div class="top-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-shell-lang="en" aria-pressed="true">English</button>
+        <button class="secondary" type="button" data-shell-lang="rw" aria-pressed="false">Kinyarwanda</button>
+      </div>
+      <button class="theme-toggle" type="button" data-theme-toggle>Theme</button>
+      <button id="signout" class="secondary" type="button">Sign out</button>
+    </div>
   </div>
-  <div id="alert-list"></div>
-  <div id="alert-detail" style="display:none"></div>
-  <div class="card">
-  <h2>My appointments</h2>
-  <div id="appointment-list" class="note">Loading...</div>
-  <button type="button" id="appt-refresh" class="secondary">Refresh</button>
-  </div>
-  <script src="js/dashboard.js"></script>
-  <script>
-    var name = sessionStorage.getItem("ehumure_name");
-    var role = sessionStorage.getItem("ehumure_role");
-    if (!name || role !== "psychologist") window.location.href = "login.html";
-    document.getElementById("welcome").textContent = "Signed in as " + name;
-    
-    function loadAppointments() {
-      var box = document.getElementById("appointment-list");
-      fetch("http://localhost:4000/appointments", {
-        headers: { Authorization: "Bearer " + sessionStorage.getItem("ehumure_token") }
-      })
-        .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
-        .then(function (out) {
-          if (!out.ok) { box.textContent = out.data.error; return; }
-                    if (out.data.length === 0) { box.textContent = "Total appointments: 0. None booked yet."; return; }
-          box.innerHTML = "";
-          var total = document.createElement("p");
-          total.style.fontWeight = "bold";
-          total.textContent = "Total appointments: " + out.data.length;
-          box.appendChild(total);
-          out.data.forEach(function (a) {
-            var item = document.createElement("div");
-            item.style.border = "1px solid #d8e0e6";
-            item.style.borderRadius = "8px";
-            item.style.padding = "12px";
-            item.style.margin = "10px 0";
-            var title = document.createElement("strong");
-            title.textContent = "Patient " + a.patient_id;
-            var when = document.createElement("div");
-            when.textContent = new Date(a.scheduled_for).toLocaleString();
-            var phone = document.createElement("div");
-            phone.textContent = "Phone: " + a.phone;
-            var where = document.createElement("div");
-            where.textContent = a.location + " (" + a.status + ")";
-            item.appendChild(title);
-            item.appendChild(when);
-            item.appendChild(phone);
-            item.appendChild(where);
-            box.appendChild(item);
-          });
-        })
-        .catch(function () { box.textContent = "Cannot reach the backend."; });
-    }
-    document.getElementById("appt-refresh").onclick = loadAppointments;
-    loadAppointments();
-  </script>
+</header>
+
+<main class="page-shell main">
+
+  <section class="stat-row" aria-label="Workspace summary">
+    <div class="stat">
+      <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>
+      <span class="muted" data-rw="Integuza zifunguye">Open alerts</span>
+      <strong id="alert-total">Loading…</strong>
+    </div>
+    <div class="stat">
+      <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+      <span class="muted" data-rw="Ibyo nahawe">Assigned to me</span>
+      <strong id="assigned-total">Loading…</strong>
+    </div>
+    <div class="stat">
+      <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+      <span class="muted" data-rw="Gahunda">Appointments</span>
+      <strong id="appt-total">Loading…</strong>
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="eyebrow" data-rw="Gukurikirana">Follow-up</p>
+    <h1 data-rw="Integuza zifunguye">Open alerts</h1>
+    <p class="muted" data-rw="Suzuma kode y'umurwayi kandi utegure gahunda yo kumukurikirana.">Review the patient code and plan a follow-up appointment.</p>
+    <div id="alert-list" aria-live="polite"><p class="muted">Loading alerts…</p></div>
+    <div id="alert-detail" hidden></div>
+  </section>
+
+  <section class="card">
+    <form id="mental-health-search">
+      <div class="field">
+        <label for="mental-health-patient-code">Search by patient code</label>
+        <input id="mental-health-patient-code" inputmode="text" autocomplete="off" placeholder="For example, P001" maxlength="12">
+      </div>
+      <div class="actions">
+        <button type="submit">Search</button>
+        <button type="button" id="mental-health-search-clear" class="secondary">Clear search</button>
+      </div>
+      <p id="mental-health-search-message" class="status" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="card">
+    <p class="eyebrow" data-rw="Ubuvuzi buteganyijwe">Scheduled care</p>
+    <h2>
+      <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+      <span data-rw="Gahunda zanjye">My appointments</span>
+      <span id="appt-heading-total" class="pill">Loading…</span>
+    </h2>
+    <div id="appointment-list" aria-live="polite">Loading appointments…</div>
+    <div class="actions"><button type="button" id="appt-refresh" class="secondary">Refresh</button></div>
+  </section>
+
+</main>
+
+<script src="js/shell-language.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/psychologist.js"></script>
 </body>
 </html>
+
