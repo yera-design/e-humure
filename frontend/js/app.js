@@ -4,24 +4,24 @@ var draftSaveChain = Promise.resolve();
 
 var state = {
   step: "consent",
-    quickIndex: 0,
-    fullIndex: 0,
+  quickIndex: 0,
+  fullIndex: 0,
   quick: [null, null],
   full: [null, null, null, null, null, null, null, null, null],
   result: null,
   message: "",
-draftStatus: ""
+  draftStatus: ""
 };
 
-// The shared language switch in the top bar (js/shell-language.js) owns the
-// language choice and announces it. The screening flow only has to redraw, so
-// every answer already picked stays picked.
+// Shows Kinyarwanda when it exists, otherwise falls back to English.
 function text(item) {
   if (LANGUAGE === "rw" && item.rw) return item.rw;
   return item.en;
 }
 
-// Changing the language redraws the current screen and keeps every answer already picked.
+// The shared language switch in the top bar (js/shell-language.js) owns the
+// language choice and announces it. The screening flow only has to redraw, so
+// every answer already picked stays picked.
 function setLanguage(code) {
   LANGUAGE = code === "rw" ? "rw" : "en";
   render();
@@ -123,7 +123,6 @@ function resumeDraft(draft) {
   render();
 }
 
-
 function onQuickDone(answers) {
   var quick = scoreQuickQuestions(answers);
   if (quick.positive) {
@@ -134,7 +133,6 @@ function onQuickDone(answers) {
   } else {
     state.result = quick;
     state.step = "result";
-    state.draftStatus = "";
   }
   render();
   if (!quick.positive) saveScreening("quick", answers);
@@ -143,6 +141,7 @@ function onQuickDone(answers) {
 function onFullDone(items) {
   state.result = scoreFullQuestionnaire(items);
   state.step = "result";
+  state.draftStatus = "";
   render();
   saveScreening("full", items);
 }
@@ -199,10 +198,11 @@ function showMessage(box, message) {
   p.textContent = message;
   card.appendChild(p);
   card.appendChild(restartButton());
-    if (sessionStorage.getItem("ehumure_role") === "ncd_nurse" && typeof window.nurseBackToDashboard === "function") {
+  if (sessionStorage.getItem("ehumure_role") === "ncd_nurse" && typeof window.nurseBackToDashboard === "function") {
     var dashboardActions = document.createElement("div"); dashboardActions.className = "actions";
     var dashboardButton = document.createElement("button"); dashboardButton.type = "button"; dashboardButton.className = "secondary"; dashboardButton.textContent = LANGUAGE === "rw" ? "Subira ku rubuga rw'umuforomo" : "Back to nurse dashboard";
     dashboardButton.addEventListener("click", window.nurseBackToDashboard); dashboardActions.appendChild(dashboardButton); card.appendChild(dashboardActions);
+  }
   box.appendChild(card);
 }
 
@@ -249,13 +249,13 @@ function showResult(box, result) {
 
   if (state.saved) {
     var saved = document.createElement("p");
-    saved.className = "status"  (state.saved.indexOf("Not saved:") === 0 ? " error" : "");
+    saved.className = "status" + (state.saved.indexOf("Not saved:") === 0 ? " error" : "");
     saved.textContent = state.saved;
     card.appendChild(saved);
   }
 
   card.appendChild(restartButton());
-    if (sessionStorage.getItem("ehumure_role") === "ncd_nurse" && typeof window.nurseBackToDashboard === "function") {
+  if (sessionStorage.getItem("ehumure_role") === "ncd_nurse" && typeof window.nurseBackToDashboard === "function") {
     var dashboardActions = document.createElement("div"); dashboardActions.className = "actions";
     var dashboardButton = document.createElement("button"); dashboardButton.type = "button"; dashboardButton.className = "secondary"; dashboardButton.textContent = LANGUAGE === "rw" ? "Subira ku rubuga rw'umuforomo" : "Back to nurse dashboard";
     dashboardButton.addEventListener("click", window.nurseBackToDashboard); dashboardActions.appendChild(dashboardButton); card.appendChild(dashboardActions);
@@ -279,4 +279,6 @@ document.addEventListener("ehumure:language", function (event) {
 
 document.addEventListener("DOMContentLoaded", function () {
   setLanguage(typeof window.getShellLanguage === "function" ? window.getShellLanguage() : LANGUAGE);
-});}
+});
+
+
