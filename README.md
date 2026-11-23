@@ -20,7 +20,7 @@ Patients are recorded by code, never by name. Phone numbers are encrypted.
 ## Install
 
 ```bash
-git clone https://github.com/yera-design/e-humure.git
+git clone <this repository>
 cd e-humure/backend
 npm install
 ```

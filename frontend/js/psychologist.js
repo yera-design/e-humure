@@ -1,194 +1,191 @@
-var API = "";
-function rw() { return typeof window.getShellLanguage === "function" && window.getShellLanguage() === "rw"; }
-function token() { return sessionStorage.getItem("ehumure_token") || ""; }
-function authHeaders(json) { var h = { Authorization: "Bearer " + token() }; if (json) h["Content-Type"] = "application/json"; return h; }
-function say(box, message, isError) { box.innerHTML = ""; var p = document.createElement("p"); p.className = isError ? "error" : "note"; p.textContent = message; box.appendChild(p); }
-function badge(riskLevel, item9Flag) { var isRw=rw(), labels={low:isRw?"BIKE":"LOW",moderate:isRw?"BIRINGANIYE":"MODERATE",high:isRw?"BYINSHI":"HIGH"}; return { label: item9Flag ? (isRw?"BYIHUTIRWA":"EMERGENCY") : (labels[riskLevel]||labels.low), cls: item9Flag ? "result-high" : "result-" + riskLevel }; }
-
-function claimAlert(alert, button) {
-  button.disabled = true;
-  fetch(API + "/alerts/" + encodeURIComponent(alert.alert_id) + "/assign", { method: "POST", headers: authHeaders(true), body: "{}" })
-    .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
-    .then(function (out) { if (!out.ok) { say(document.getElementById("alert-list"), out.data.error || "This alert could not be assigned.", true); return; } loadAlerts(); })
-    .catch(function () { say(document.getElementById("alert-list"), navigator.onLine ? "Could not assign the alert. Try again." : "You are offline. The alert was not assigned.", true); })
-    .finally(function () { button.disabled = false; });
-}
-
-/* Both mental-health roles may take an unheld alert: a psychiatric nurse at
-   their own facility, a clinical psychologist anywhere in their district. */
-function canClaim() {
-  return ["psychiatric_nurse", "clinical_psychologist"].indexOf(sessionStorage.getItem("ehumure_role")) >= 0;
-}
-
-function escalateAlert(alert, button, statusBox) {
-  // The nurse must say why the case is beyond them. The reason is stored on the
-  // alert and written to the audit log, so it is not optional.
-  var reason = window.prompt(rw()
-    ? "Andika impamvu iki kibazo kirenze ubushobozi bwawe (inyuguti 10 kugeza 500):"
-    : "Write why this case is beyond what you can handle (10 to 500 characters):", "");
-  if (reason === null) return;
-  reason = String(reason).trim();
-  if (reason.length < 10 || reason.length > 500) {
-    statusBox.textContent = rw()
-      ? "Andika impamvu ngufi, inyuguti 10 kugeza 500."
-      : "Write a short reason, from 10 to 500 characters.";
-    statusBox.className = "status error";
-    return;
+(function () {
+  function rw() { return typeof window.getShellLanguage === "function" && window.getShellLanguage() === "rw"; }
+  function role() { return sessionStorage.getItem("ehumure_role"); }
+  function headers(json) { var h = { Authorization: "Bearer " + (sessionStorage.getItem("ehumure_token") || "") }; if (json) h["Content-Type"] = "application/json"; return h; }
+  function text(en, rwText) { return rw() ? rwText : en; }
+  function showStatus(box, message, error) { box.textContent = message; box.className = error ? "status error" : "status"; }
+  function request(method, url, body) {
+    return fetch(url, { method: method, headers: headers(!!body), body: body ? JSON.stringify(body) : undefined })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); });
   }
-  button.disabled = true;
-  statusBox.className = "status";
-  statusBox.textContent = rw() ? "Kohereza ikibazo ku nzobere…" : "Referring the case to a clinical psychologist…";
-  fetch(API + "/alerts/" + encodeURIComponent(alert.alert_id) + "/escalate", { method: "POST", headers: authHeaders(true), body: JSON.stringify({ reason: reason }) })
-    .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
-    .then(function (out) {
-      if (!out.ok) {
-        // Show exactly what the server said, so a refusal such as the
-        // first-visit rule explains itself instead of failing silently.
-        statusBox.textContent = out.data.error || (rw() ? "Ntibyashobotse kohereza ikibazo ku nzobere." : "The alert could not be escalated.");
-        statusBox.className = "status error";
-        statusBox.scrollIntoView({ block: "nearest" });
-        return;
-      }
-      if (out.data.warning) {
-        statusBox.textContent = rw()
-          ? "Nta nzobere ihari muri aka karere. Ikibazo gifunguye kandi cyanditsweho ko ari IHUTIRWA. Menyesha umuyobozi w'ivuriro ako kanya."
-          : out.data.warning;
-        statusBox.className = "status error";
-      } else {
-        statusBox.textContent = rw()?"Ikibazo cyoherejwe ku nzobere yo ku rwego rw'akarere.":"The alert was sent to a clinical psychologist in this district.";
-        statusBox.className = "status";
-      }
-      button.hidden=true;
-      // Hide booking: an escalated case is no longer this nurse's to schedule.
-      statusBox.parentNode.querySelectorAll('[data-action="book"]').forEach(function (item) { item.hidden = true; });
-      loadAlerts();
-    }).catch(function () { statusBox.textContent = rw()?"Ntibyashobotse kugera kuri seriveri.":"Could not reach the server."; statusBox.className="status error"; })
-    .finally(function () { button.disabled = false; });
-}
-
-function renderList(alerts) {
-  var box = document.getElementById("alert-list"); box.innerHTML = "";
-  document.getElementById("alert-total").textContent = alerts.length;
-  document.getElementById("assigned-total").textContent = alerts.filter(function (a) { return a.assigned_to_me; }).length;
-  if (!alerts.length) { say(box, "No open alerts. New alerts will appear here.", false); return; }
-  // URGENT first: emergencies (item 9), then the highest scores, then oldest.
-  alerts.sort(function (a, b) {
-    return Number(b.urgent) - Number(a.urgent)
-      || Number(b.item9_flag) - Number(a.item9_flag)
-      || Number(b.total_score || 0) - Number(a.total_score || 0)
-      || new Date(a.screened_at) - new Date(b.screened_at);
-  });
-  alerts.forEach(function (a) {
-    var labels = badge(a.risk_level, a.item9_flag);
-    var card = document.createElement("article"); card.className = "list-card " + (a.item9_flag ? "alert-emergency" : "alert-" + a.risk_level);
-    var title = document.createElement("h2"); title.textContent = (a.urgent ? (rw()?"IHUTIRWA · ":"URGENT · ") : "") + labels.label + " — " + (rw()?"Umurwayi ":"Patient ") + a.patient_id; card.appendChild(title);
-    if (a.escalation_reason) {
-      var why = document.createElement("p"); why.className = "note";
-      why.textContent = (rw()?"Yoherejwe na ":"Escalated by ") + (a.escalated_by_name || (rw()?"umuforomo":"a psychiatric nurse")) + ": " + a.escalation_reason;
-      card.appendChild(why);
-    }
-    var meta = document.createElement("p"); meta.className = "note";
-    var sev={minimal:rw()?"Bike cyane":"Minimal",mild:rw()?"Byoroheje":"Mild",moderate:rw()?"Biringaniye":"Moderate",moderately_severe:rw()?"Bikabije ku rugero ruringaniye":"Moderately severe",severe:rw()?"Bikabije":"Severe"};
-    meta.textContent = (rw()?"Ivuriro: ":"Clinic: ") + a.facility_name + " · " + a.sector + " · PHQ-9 " + (sev[a.severity]||a.severity) + " (" + a.total_score + "/27) · " + new Date(a.screened_at).toLocaleDateString(rw()?"rw-RW":"en-RW"); card.appendChild(meta);
-    // Anything in this list that is not already mine is unheld, so both a
-    // psychiatric nurse and a clinical psychologist can claim it.
-    if (!a.assigned_to_me && canClaim()) {
-      var assign = document.createElement("button"); assign.type = "button"; assign.className = "secondary"; assign.textContent = rw()?"Mpa iyi nteguza":"Assign to me";
-      assign.onclick = function () { claimAlert(a, assign); }; card.appendChild(assign);
-    }
-    var open = document.createElement("button"); open.type = "button"; open.className = "secondary"; open.textContent = rw()?"Reba integuza":"Review alert"; open.onclick = function () { renderDetail(a); }; card.appendChild(open);
-    box.appendChild(card);
-  });
-}
-
-function renderDetail(a) {
-  var list = document.getElementById("alert-list"), detail = document.getElementById("alert-detail");
-  list.hidden = true; detail.hidden = false; detail.innerHTML = "";
-  var labels = badge(a.risk_level, a.item9_flag), card = document.createElement("section"); card.className = "card " + labels.cls;
-  var title = document.createElement("h2"); title.textContent = labels.label + " — " + (rw()?"Umurwayi ":"Patient ") + a.patient_id; card.appendChild(title);
-  var facility = document.createElement("p"); facility.textContent = (rw()?"Ivuriro cyangwa ibitaro: ":"Clinic or hospital: ") + a.facility_name + (a.sector ? (rw()?" · Umurenge ":" · Sector ") + a.sector : ""); card.appendChild(facility);
-  var severityNames={minimal:rw()?"Bike cyane":"Minimal",mild:rw()?"Byoroheje":"Mild",moderate:rw()?"Biringaniye":"Moderate",moderately_severe:rw()?"Bikabije ku rugero ruringaniye":"Moderately severe",severe:rw()?"Bikabije":"Severe"};
-  var severity = document.createElement("p"); severity.textContent = (rw()?"Urwego rwa PHQ-9: ":"PHQ-9 severity: ") + (severityNames[a.severity]||a.severity) + " · " + (rw()?"Amanota ":"Score ") + a.total_score+"/27"; card.appendChild(severity);
-  var phone = document.createElement("p"); phone.textContent = (rw()?"Telefone y'umurwayi: ":"Patient phone: ") + a.phone; card.appendChild(phone);
-  var screened = document.createElement("p"); screened.className = "note"; screened.textContent = (rw()?"Yasuzumwe: ":"Screened: ") + new Date(a.screened_at).toLocaleString(rw()?"rw-RW":"en-RW"); card.appendChild(screened);
-  if (a.last_attended_at) { var priorVisit = document.createElement("p"); priorVisit.className = "note"; priorVisit.textContent = (rw()?"Gahunda iheruka yitabiriwe: ":"Last attended appointment: ") + new Date(a.last_attended_at).toLocaleString(rw()?"rw-RW":"en-RW"); card.appendChild(priorVisit); }
-  if (a.escalation_reason) {
-    var escalatedBox = document.createElement("p");
-    escalatedBox.textContent = (rw()?"Impamvu yo kohereza ku nzobere (":"Reason for escalation (") + (a.escalated_by_name || (rw()?"umuforomo w'indwara zo mu mutwe":"psychiatric nurse")) + "): " + a.escalation_reason;
-    card.appendChild(escalatedBox);
+  function activeSearch() { return document.getElementById("mental-health-patient-code").value.trim().toUpperCase(); }
+  function withPatientSearch(url, patientId) { return patientId ? url + "?patientId=" + encodeURIComponent(patientId) : url; }
+  function localDateTime(value) {
+    var date = new Date(value); date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 16);
   }
-  if (a.item9_flag) { var emergency = document.createElement("div"); emergency.className = "emergency"; emergency.textContent = rw()?"⚠ BYIHUTIRWA: kurikiza intambwe zo kohereza umurwayi zihutirwa zo ku ivuriro kandi ubimenyeshe itsinda ryita ku barwayi.":"⚠ EMERGENCY: follow the facility's immediate referral steps and contact the responsible care team."; card.appendChild(emergency); }
-  if (!a.assigned_to_me && canClaim()) { var claim = document.createElement("button"); claim.type = "button"; claim.textContent = rw()?"Mpa iyi nteguza":"Assign to me"; claim.onclick = function () { claimAlert(a, claim); }; card.appendChild(claim); }
-  var heading = document.createElement("h2"); heading.textContent = rw()?"Teganya gahunda":"Book appointment"; card.appendChild(heading);
-  var label = document.createElement("label"); label.htmlFor = "appointment-time"; label.textContent = rw()?"Itariki n'isaha bya gahunda":"Appointment date and time"; card.appendChild(label);
-  var date = document.createElement("input"); date.id = "appointment-time"; date.type = "datetime-local"; date.required = true; card.appendChild(date);
-  var error = document.createElement("p"); error.className = "status"; error.setAttribute("aria-live", "polite"); card.appendChild(error);
-  // Escalation is only possible once the nurse has seen the patient, urgent
-  // and emergency cases included. Before that first attended visit no button
-  // is drawn at all, so the nurse is never offered an action the server will
-  // refuse; a visible warning explains what to do instead.
-  if (sessionStorage.getItem("ehumure_role") === "psychiatric_nurse" && !a.requires_specialist) {
-    if (a.last_attended_at) {
-      var escalate = document.createElement("button"); escalate.type = "button"; escalate.className = "secondary";
-      escalate.textContent = a.urgent
-        ? (rw() ? "Kohereza ikibazo cyihutirwa ku nzobere" : "Urgent specialist referral")
-        : (rw() ? "Kohereza ikibazo ku nzobere" : "Refer to a specialist");
-      escalate.onclick = function () { escalateAlert(a, escalate, error); };
-      card.appendChild(escalate);
-    } else {
-      var waitForVisit = document.createElement("p");
-      waitForVisit.className = "case-transferred";
-      waitForVisit.textContent = rw()
-        ? "Ntushobora kohereza iki kibazo ku nzobere mbere y'uko umurwayi aza bwa mbere. Banza uteganye gahunda, wandike ko yayitabiriye."
-        : "You can't escalate this case before the first visit. Book the appointment and mark it attended first.";
-      card.appendChild(waitForVisit);
-    }
+  function addButton(parent, label, secondary, callback) {
+    var b = document.createElement("button"); b.type = "button"; b.textContent = label;
+    if (secondary) b.className = "secondary";
+    b.addEventListener("click", function () { callback(b); }); parent.appendChild(b); return b;
   }
-  var actions = document.createElement("div"); actions.className = "actions";
-  // Only a clinical psychologist closes a case.
-  if (sessionStorage.getItem("ehumure_role") === "clinical_psychologist") {
-    var handled = document.createElement("button"); handled.type = "button"; handled.className = "secondary";
-    handled.textContent = rw()?"Shyira ku byarangiye":"Mark as handled";
-    handled.onclick = function () {
-      handled.disabled = true; error.className = "status"; error.textContent = rw()?"Gufunga ikibazo\u2026":"Closing the case\u2026";
-      fetch(API + "/alerts/" + encodeURIComponent(a.alert_id) + "/handled", { method: "POST", headers: authHeaders(true), body: "{}" })
-        .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
+  function updateOutcome(item, outcome, button) {
+    button.disabled = true;
+    request("PATCH", "/appointments/" + encodeURIComponent(item.appointment_id) + "/outcome", { outcome: outcome })
+      .then(function (out) { if (!out.ok) throw new Error(out.data.error || "Appointment status could not be saved."); loadAppointments(activeSearch()); if (window.loadAlerts) window.loadAlerts(activeSearch()); })
+      .catch(function (error) { var message = document.getElementById("appointment-action-message"); if (message) showStatus(message, error.message, true); })
+      .finally(function () { button.disabled = false; });
+  }
+  function renderNotes(item, parent) {
+    parent.querySelectorAll(".appointment-notes").forEach(function (old) { old.remove(); });
+    var section = document.createElement("section"); section.className = "appointment-notes";
+    var title = document.createElement("h3"); title.textContent = text("Visit note", "Inyandiko y'isura"); section.appendChild(title);
+    var list = document.createElement("div"); list.className = "appointment-note-list"; section.appendChild(list);
+    var feedback = document.createElement("p"); feedback.className = "status"; feedback.hidden = true; feedback.setAttribute("role", "status"); feedback.setAttribute("aria-live", "polite"); section.appendChild(feedback);
+    var ownNote = null, editingNoteId = null;
+    var editor = document.createElement("div"); editor.className = "visit-note-editor"; editor.hidden = true;
+    var label = document.createElement("label"); label.textContent = text("Write what happened with this case", "Andika uko iki kibazo cyagenze"); label.htmlFor = "visit-note-" + item.appointment_id; editor.appendChild(label);
+    var input = document.createElement("textarea"); input.id = label.htmlFor; input.rows = 3; input.maxLength = 1000; editor.appendChild(input);
+    var msg = document.createElement("p"); msg.className = "status"; msg.setAttribute("aria-live", "polite"); editor.appendChild(msg);
+    var save = addButton(editor, text("Save note", "Bika inyandiko"), false, function () {
+      var note = input.value.trim();
+      if (note.length < 3) { showStatus(msg, text("Write a short note first.", "Banza wandike inyandiko ngufi."), true); input.focus(); return; }
+      save.disabled = true; showStatus(msg, text("Saving note…", "Kubika inyandiko…"), false);
+      var url = "/alerts/" + encodeURIComponent(item.alert_id) + (editingNoteId ? "/notes/" + encodeURIComponent(editingNoteId) : "/note");
+      request(editingNoteId ? "PATCH" : "POST", url, { note: note })
         .then(function (out) {
-          if (!out.ok) { error.textContent = out.data.error || (rw()?"Ntibyashobotse gufunga ikibazo.":"The case could not be closed."); error.className = "status error"; return; }
-          error.textContent = rw()?"Ikibazo cyafunzwe.":"Case marked as handled."; error.className = "status";
-          detail.hidden = true; list.hidden = false; loadAlerts();
+          if (!out.ok) throw new Error(out.data.error || "The note was not saved.");
+          editingNoteId = null; input.value = ""; editor.hidden = true; editorToggle.setAttribute("aria-expanded", "false");
+          feedback.hidden = false; showStatus(feedback, text("Visit note saved.", "Inyandiko y'isura yabitswe."), false); loadNotes();
         })
-        .catch(function () { error.textContent = rw()?"Ntibyashobotse kugera kuri seriveri.":"Could not reach the server."; error.className = "status error"; })
-        .finally(function () { handled.disabled = false; });
-    };
-    actions.appendChild(handled);
+        .catch(function (error) { editor.hidden = false; editorToggle.setAttribute("aria-expanded", "true"); showStatus(msg, error.message, true); })
+        .finally(function () { save.disabled = false; });
+    });
+    editor.appendChild(save);
+    var editorToggle = addButton(section, text("Add visit note", "Ongeraho inyandiko y'isura"), true, function () {
+      if (editor.hidden) {
+        editingNoteId = ownNote ? ownNote.note_id : null;
+        input.value = ownNote ? ownNote.note : "";
+        save.textContent = ownNote ? text("Save changes", "Bika impinduka") : text("Save note", "Bika inyandiko");
+        editor.hidden = false;
+      } else {
+        editor.hidden = true; editingNoteId = null; input.value = "";
+      }
+      editorToggle.setAttribute("aria-expanded", String(!editor.hidden));
+      if (!editor.hidden) input.focus();
+    });
+    editorToggle.setAttribute("aria-expanded", "false"); section.appendChild(editor);
+    function loadNotes() {
+      list.textContent = text("Loading notes…", "Gukurura inyandiko…");
+      request("GET", "/alerts/" + encodeURIComponent(item.alert_id) + "/notes")
+        .then(function (out) {
+          list.innerHTML = ""; ownNote = null;
+          if (!out.ok || !Array.isArray(out.data)) { list.textContent = text("Notes could not be loaded.", "Ntibyashobotse kureba inyandiko."); return; }
+          if (!out.data.length) { list.textContent = text("No visit notes yet.", "Nta nyandiko y'isura irahari."); editorToggle.textContent = text("Add visit note", "Ongeraho inyandiko y'isura"); return; }
+          out.data.forEach(function (note) {
+            var row = document.createElement("p"); row.className = "note";
+            row.textContent = new Date(note.created_at).toLocaleString(rw() ? "rw-RW" : "en-RW") + " · " + note.full_name + ": " + note.note;
+            list.appendChild(row);
+          });
+          ownNote = out.data.find(function (note) { return note.can_edit; }) || null;
+          editorToggle.textContent = ownNote ? text("Edit my note", "Hindura inyandiko yanjye") : text("Add visit note", "Ongeraho inyandiko y'isura");
+        }).catch(function () { list.textContent = text("Notes could not be loaded.", "Ntibyashobotse kureba inyandiko."); });
+    }
+    parent.appendChild(section); loadNotes();
   }
-  var book = document.createElement("button"); book.type = "button"; book.dataset.action = "book"; book.textContent = rw()?"Teganya gahunda":"Book appointment";
-  book.onclick = function () {
-    if (!date.value) { error.textContent = rw()?"Hitamo itariki n'isaha.":"Choose a date and time."; error.className = "status error"; date.focus(); return; }
-    if (new Date(date.value).getTime() <= Date.now()) { error.textContent = rw()?"Hitamo itariki n'isaha bizaza.":"Choose a future date and time."; error.className = "status error"; date.focus(); return; }
-    book.disabled = true; error.textContent = rw()?"Kubika gahunda n'ubutumwa bwo kwibutsa…":"Saving appointment and reminder…";
-    fetch(API + "/appointments", { method: "POST", headers: authHeaders(true), body: JSON.stringify({ patientId: a.patient_id, alertId: a.alert_id, scheduledFor: new Date(date.value).toISOString() }) })
-      .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
-      .then(function (out) { if (!out.ok) { error.textContent = out.data.error || (rw()?"Gahunda ntiyabitswe.":"Appointment was not saved."); error.className = "status error"; return; } error.textContent = rw()?"Gahunda yabitswe. Ubutumwa butatu bwo kwibutsa (umurwayi x2, nawe) buri muri sisitemu yo kugerageza; nta butumwa nyabwo bwoherejwe.":"Appointment saved. Three reminders queued in the SMS simulator: confirmation to the patient, a reminder to the patient the day before, and a reminder to you the day before. No real SMS has been sent."; error.className = "status"; loadAppointments(); loadAlerts(); })
-      .catch(function () { error.textContent = navigator.onLine ? (rw()?"Ntibyashobotse kubika gahunda. Reba seriveri wongere ugerageze.":"Could not save the appointment. Check the server and try again.") : (rw()?"Nta murongo. Gahunda ntiyabitswe.":"You are offline. The appointment was not saved."); error.className = "status error"; })
-      .finally(function () { book.disabled = false; });
-  };
-  var back = document.createElement("button"); back.type = "button"; back.className = "secondary"; back.textContent = rw()?"Subira ku nteguza":"Back to alerts"; back.onclick = function () { detail.hidden = true; list.hidden = false; };
-  actions.appendChild(book); actions.appendChild(back); card.appendChild(actions); detail.appendChild(card);
-}
-
-function loadAlerts(patientId) {
-  var box = document.getElementById("alert-list"); box.textContent = "Loading alerts…";
-  var url = API + "/alerts" + (patientId ? "?patientId=" + encodeURIComponent(patientId) : "");
-  fetch(url, { headers: authHeaders(false) }).then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
-    .then(function (out) { if (Array.isArray(out.data)) renderList(out.data); else { document.getElementById("alert-total").textContent = "—"; document.getElementById("assigned-total").textContent = "—"; say(box, out.data.error || "Alerts could not be loaded.", true); } })
-    .catch(function () { say(box, navigator.onLine ? "Could not load alerts. Check the server and try again." : "You are offline. Alerts are unavailable until you reconnect.", true); });
-}
-
-window.loadAlerts = loadAlerts;
-window.onload = function () {
-  loadAlerts();
-};
-document.addEventListener("ehumure:language", function () { loadAlerts(); if (typeof window.loadAppointments === "function") window.loadAppointments(); });
+  function renderAppointment(item, box) {
+    var card = document.createElement("article"); card.className = "list-card";
+    var heading = document.createElement("h3"); heading.textContent = text("Patient ", "Umurwayi ") + item.patient_id; card.appendChild(heading);
+    var site = document.createElement("p"); site.textContent = text("Facility: ", "Ivuriro: ") + (item.facility_name || item.location || "—") + (item.district ? " · " + item.district : ""); card.appendChild(site);
+    var when = document.createElement("p"); when.textContent = new Date(item.scheduled_for).toLocaleString(rw() ? "rw-RW" : "en-RW"); card.appendChild(when);
+    var statusNames = rw() ? { scheduled: "Biteganyijwe", attended: "Yitabiriye", missed: "Yasibye", cancelled: "Byahagaritswe" } : { scheduled: "Scheduled", attended: "Attended", missed: "Missed", cancelled: "Cancelled" };
+    var status = document.createElement("p"); status.className = "note";
+    status.textContent = text("Status: ", "Imiterere: ") + (statusNames[item.status] || item.status) + (item.arrived_at ? text(" · Attended ", " · Yitabiriye ") + new Date(item.arrived_at).toLocaleString(rw() ? "rw-RW" : "en-RW") : ""); card.appendChild(status);
+    var phone = document.createElement("p"); phone.textContent = text("Phone: ", "Telefone: ") + item.phone; card.appendChild(phone);
+    var actionMessage = document.createElement("p"); actionMessage.id = "appointment-action-message"; actionMessage.className = "status"; actionMessage.setAttribute("aria-live", "polite"); card.appendChild(actionMessage);
+    if (role() === "psychiatric_nurse" && item.requires_specialist) {
+      var transferred = document.createElement("div"); transferred.className = "case-transferred";
+      var transferTitle = document.createElement("strong"); transferTitle.textContent = text("CASE TRANSFERRED · No longer assigned to you", "IKIBAZO CYOHEREJWE · Ntukigishinzwe"); transferred.appendChild(transferTitle);
+      var transferText = document.createElement("p"); transferText.textContent = item.escalation_reason
+        ? text("A clinical psychologist is responsible for follow-up. Reason: ", "Inzobere mu mitekerereze ni yo ikurikirana iki kibazo. Impamvu: ") + item.escalation_reason
+        : text("A clinical psychologist is responsible for follow-up. No further action is needed from your queue.", "Inzobere mu mitekerereze ni yo ikurikirana iki kibazo. Nta yindi nshingano usigaranye kuri uru rutonde.");
+      transferred.appendChild(transferText); card.appendChild(transferred); box.appendChild(card); return;
+    }
+    if (item.status === "scheduled") {
+      var attended = addButton(card, text("Mark attended", "Shyira ko yitabiriye"), false, function () { updateOutcome(item, "attended", attended); });
+      var missed = addButton(card, text("Mark missed", "Shyira ko yasibye"), true, function () { updateOutcome(item, "missed", missed); });
+    }
+    if (item.status === "scheduled" || item.status === "missed") {
+      var dateLabel = document.createElement("label"); dateLabel.textContent = text("Reschedule for", "Hindura itariki ya gahunda"); dateLabel.htmlFor = "reschedule-" + item.appointment_id; card.appendChild(dateLabel);
+      var date = document.createElement("input"); date.type = "datetime-local"; date.id = dateLabel.htmlFor; date.value = localDateTime(item.scheduled_for); card.appendChild(date);
+      var reschedule = addButton(card, text("Save new time", "Bika isaha nshya"), true, function () {
+        if (!date.value || new Date(date.value).getTime() <= Date.now()) { showStatus(actionMessage, text("Choose a future date and time.", "Hitamo itariki n'isaha bizaza."), true); return; }
+        reschedule.disabled = true; showStatus(actionMessage, text("Rescheduling and updating simulated reminders…", "Guhindura gahunda n'ubutumwa bw'igerageza…"), false);
+        request("PATCH", "/appointments/" + encodeURIComponent(item.appointment_id) + "/reschedule", { scheduledFor: new Date(date.value).toISOString() })
+          .then(function (out) { if (!out.ok) throw new Error(out.data.error || "The appointment could not be rescheduled."); loadAppointments(activeSearch()); })
+          .catch(function (error) { showStatus(actionMessage, error.message, true); })
+          .finally(function () { reschedule.disabled = false; });
+      });
+    }
+    if (item.status === "attended") {
+      renderNotes(item, card);
+      if (role() === "psychiatric_nurse" && !item.requires_specialist) {
+        addButton(card, text("Escalate to clinical psychologist", "Ohereza ku nzobere mu mitekerereze"), true, function (button) {
+          var reason = window.prompt(text("Write why this case needs a psychologist (10 to 500 characters):", "Andika impamvu iki kibazo gikeneye inzobere (inyuguti 10 kugeza kuri 500):"), "");
+          if (reason === null) return;
+          reason = reason.trim(); if (reason.length < 10 || reason.length > 500) { showStatus(actionMessage, text("Write a reason from 10 to 500 characters.", "Andika impamvu y'inyuguti 10 kugeza kuri 500."), true); return; }
+          button.disabled = true; request("POST", "/alerts/" + encodeURIComponent(item.alert_id) + "/escalate", { reason: reason })
+            .then(function (out) { if (!out.ok) throw new Error(out.data.error || "The case could not be escalated."); showStatus(actionMessage, text("The case was referred to the district clinical psychologist.", "Ikibazo cyoherejwe ku nzobere mu mitekerereze yo ku rwego rw'akarere."), false); loadAppointments(activeSearch()); })
+            .catch(function (error) { showStatus(actionMessage, error.message, true); }).finally(function () { button.disabled = false; });
+        });
+      }
+      var followToggle = addButton(card, text("Book another appointment", "Teganya indi gahunda"), false, function () {
+        bookingPanel.hidden = !bookingPanel.hidden;
+        followToggle.setAttribute("aria-expanded", String(!bookingPanel.hidden));
+        if (!bookingPanel.hidden) followDate.focus();
+      });
+      followToggle.setAttribute("aria-expanded", "false");
+      var bookingPanel = document.createElement("div"); bookingPanel.className = "follow-up-booking"; bookingPanel.hidden = true;
+      var followLabel = document.createElement("label"); followLabel.textContent = text("Next appointment date and time", "Itariki n'isaha bya gahunda ikurikira"); followLabel.htmlFor = "follow-up-" + item.appointment_id; bookingPanel.appendChild(followLabel);
+      var followDate = document.createElement("input"); followDate.type = "datetime-local"; followDate.id = followLabel.htmlFor; bookingPanel.appendChild(followDate);
+      var follow = addButton(bookingPanel, text("Confirm appointment", "Emeza gahunda"), false, function () {
+        if (!followDate.value || new Date(followDate.value).getTime() <= Date.now()) { showStatus(actionMessage, text("Choose a future date and time.", "Hitamo itariki n'isaha bizaza."), true); return; }
+        follow.disabled = true;
+        request("POST", "/appointments/" + encodeURIComponent(item.appointment_id) + "/follow-up", { scheduledFor: new Date(followDate.value).toISOString() })
+          .then(function (out) { if (!out.ok) throw new Error(out.data.error || "The follow-up could not be booked."); showStatus(actionMessage, text("Appointment booked. A reminder has been queued.", "Gahunda yabitswe. Ubutumwa bwo kwibutsa bwateguwe."), false); loadAppointments(activeSearch()); })
+          .catch(function (error) { showStatus(actionMessage, error.message, true); }).finally(function () { follow.disabled = false; });
+      });
+      card.appendChild(bookingPanel);
+      if (role() === "clinical_psychologist") {
+        addButton(card, text("Mark case handled", "Shyira ikibazo ku byarangiye"), true, function (button) {
+          button.disabled = true; request("POST", "/alerts/" + encodeURIComponent(item.alert_id) + "/handled", {})
+            .then(function (out) { if (!out.ok) throw new Error(out.data.error || "The case could not be closed."); showStatus(actionMessage, text("Case marked as handled.", "Ikibazo cyashyizwe ku byarangiye."), false); })
+            .catch(function (error) { showStatus(actionMessage, error.message, true); }).finally(function () { button.disabled = false; });
+        });
+      }
+    }
+    box.appendChild(card);
+  }
+  function loadAppointments(patientId) {
+    var box = document.getElementById("appointment-list"); box.textContent = text("Loading appointments…", "Gukurura gahunda…");
+    request("GET", withPatientSearch("/appointments", patientId || ""))
+      .then(function (out) {
+        if (!out.ok || !Array.isArray(out.data)) throw new Error(out.data.error || "Appointments could not be loaded.");
+        var rows = out.data; document.getElementById("appt-total").textContent = rows.length; document.getElementById("appt-heading-total").textContent = rows.length; box.innerHTML = "";
+        if (!rows.length) { box.textContent = patientId ? text("No appointments found for this patient code in your assigned work.", "Nta gahunda z'uyu murwayi wabonye mu kazi wahawe.") : text("No appointments are scheduled.", "Nta gahunda zateganyijwe."); return; }
+        rows.forEach(function (item) { renderAppointment(item, box); });
+      }).catch(function (error) { document.getElementById("appt-total").textContent = "—"; document.getElementById("appt-heading-total").textContent = "—"; showStatus(box, navigator.onLine ? error.message : text("You are offline. Appointments are unavailable until you reconnect.", "Nta murongo. Gahunda zizaboneka umaze kongera kwihuza."), true); });
+  }
+  function search(event) {
+    if (event) event.preventDefault();
+    var code = activeSearch(); var message = document.getElementById("mental-health-search-message");
+    if (code && !/^(P[0-9]{3,}|P-[0-9]{4,})$/.test(code)) { showStatus(message, text("Enter a patient code such as P001.", "Andika kode y'umurwayi nka P001."), true); return; }
+    showStatus(message, code ? text("Showing your assigned records for ", "Dore dosiye wahawe za ") + code : "", false);
+    loadAppointments(code); if (window.loadAlerts) window.loadAlerts(code);
+  }
+  function clearSession() { ["ehumure_token", "ehumure_role", "ehumure_name", "ehumure_facility_id"].forEach(function (key) { sessionStorage.removeItem(key); }); location.href = "login.html"; }
+  document.addEventListener("DOMContentLoaded", function () {
+    if (["psychiatric_nurse", "clinical_psychologist"].indexOf(role()) < 0 || !sessionStorage.getItem("ehumure_token")) { location.href = "login.html"; return; }
+    document.getElementById("welcome").textContent = sessionStorage.getItem("ehumure_name") || "";
+    var badge = document.querySelector(".role-badge"), label = role() === "psychiatric_nurse" ? "Psychiatric nurse" : "Clinical psychologist";
+    badge.setAttribute("data-shell-en", label); badge.textContent = rw() ? (role() === "psychiatric_nurse" ? "Umuforomo w'indwara zo mu mutwe" : "Inzobere mu mitekerereze") : label;
+    document.getElementById("signout").addEventListener("click", clearSession);
+    document.getElementById("appt-refresh").addEventListener("click", function () { loadAppointments(activeSearch()); });
+    document.getElementById("mental-health-search").addEventListener("submit", search);
+    document.getElementById("mental-health-search-clear").addEventListener("click", function () { document.getElementById("mental-health-patient-code").value = ""; search(); });
+    loadAppointments("");
+  });
+  window.loadAppointments = loadAppointments;
+  document.addEventListener("ehumure:language", function () { loadAppointments(activeSearch()); });
+})();
 
