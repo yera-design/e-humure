@@ -1,4 +1,4 @@
-* frontend/js/admin.js
+/** frontend/js/admin.js
    The administration workspace, for both the facility administrator and the
    system administrator. Each role sees only its own panels; the panels the
    role may not use stay hidden and are never loaded.
