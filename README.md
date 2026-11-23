@@ -437,6 +437,7 @@ psql $env:DATABASE_URL -f database\migrate_sprint9_system_admin_no_facility.sql
 psql $env:DATABASE_URL -f database\migrate_sprint10_appointment_follow_up.sql
 psql $env:DATABASE_URL -f database\migrate_sprint11_sms_provider_simulation_status.sql
 psql $env:DATABASE_URL -f database\migrate_sprint12_duplicates_approval_sms_alert_routing.sql
+psql $env:DATABASE_URL -f database\migrate_sprint13_remove_seed_facility.sql
 ```
  
 **macOS / Linux / Windows cmd:**
@@ -456,6 +457,7 @@ psql "$DATABASE_URL" -f database/migrate_sprint9_system_admin_no_facility.sql
 psql "$DATABASE_URL" -f database/migrate_sprint10_appointment_follow_up.sql
 psql "$DATABASE_URL" -f database/migrate_sprint11_sms_provider_simulation_status.sql
 psql "$DATABASE_URL" -f database/migrate_sprint12_duplicates_approval_sms_alert_routing.sql
+psql "$DATABASE_URL" -f database/migrate_sprint13_remove_seed_facility.sql
 ```
  
 **Check it worked:** list the tables:
@@ -586,7 +588,6 @@ You do **not** repeat steps 3–11. To start e-Humure:
 3. (Simulator only) open a second terminal, go to `backend`, run
    `npm run simulator`.
 4. Open `http://localhost:4000/` in the browser.
- 
 ---
  
 ## 15. Using e-Humure from other computers or phones
@@ -616,10 +617,10 @@ It is not meant to be put on the public internet.
 3. Replace the project files with the new version. **Keep your
    `backend/.env` file.** Do not overwrite or delete it.
 4. If the update includes a **new** file in `database/` (for example
-   `migrate_sprint13_....sql`), set `DATABASE_URL` (step 9) and run **only the
+   `migrate_sprint14_....sql`), set `DATABASE_URL` (step 9) and run **only the
    new file(s)**, in number order, from the project folder:
 ```bash
-psql "$DATABASE_URL" -f database/migrate_sprint13_....sql
+psql "$DATABASE_URL" -f database/migrate_sprint14_....sql
 ```
  
 5. If `backend/package.json` changed, run `npm install` again in `backend`.
