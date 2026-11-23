@@ -79,7 +79,7 @@ var UI_TEXT = {
   riskHigh: { en: "High risk. Priority psychologist appointment.", rw: "Akeneye ubufasha bwihutirwa. Tegura gahunda yihutirwa yo kubonana n’umuhanga mu buzima bwo mu mutwe." },
   quickNegative: { en: "Both answers are No. Low risk, screen again at the next routine visit.", rw: "Ibisubizo byombi ni Oya. Azongera mu isuzuma ritaha." },
   quickPositive: { en: "At least one Yes. Continue to the full questionnaire.", rw: "Hari nibura igisubizo kimwe cya Yego. Komeza ku bibazo byose icyenda." },
-  emergency: { en: "EMERGENCY: the patient reported thoughts of self-harm. Follow the emergency referral steps when required and call the on-duty psychologist.", rw: "BYIHUTIRWA: umurwayi avuze ko afite ibitekerezo byo kwigirira nabi. Kurikiza inzira yabugenewe wohereze umurwayi ku nzobere mu byerekeye ubuzima bwo mu mutwe." },
+  emergency: { en: "EMERGENCY: the patient reported thoughts of self-harm. Follow the emergency referral steps now and call the on-duty psychologist.", rw: "BYIHUTIRWA: umurwayi avuze ko afite ibitekerezo byo kwigirira nabi. Kurikiza inzira yabugenewe wohereze umurwayi ku nzobere mu byerekeye ubuzima bwo mu mutwe." },
   notDiagnosis: { en: "This screen supports the nurse. It does not diagnose.", rw: "Iki gikoresho gifasha umuforomo. Ntigisuzuma indwara." },
   answerAll: { en: "Please answer every question first.", rw: "Banza usubize ibibazo byose." }
 };
@@ -90,9 +90,9 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     LANGUAGE_DEFAULT: LANGUAGE_DEFAULT,
     PHQ9_OPTIONS: PHQ9_OPTIONS,
+    QUICK_STEM: QUICK_STEM,
     PHQ9_STEM: PHQ9_STEM,
     PHQ9_QUESTIONS: PHQ9_QUESTIONS,
-    QUICK_STEM: QUICK_STEM,
     QUICK_QUESTIONS: QUICK_QUESTIONS,
     CONSENT_TEXT: CONSENT_TEXT,
     UI_TEXT: UI_TEXT,
