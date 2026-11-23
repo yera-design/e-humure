@@ -240,6 +240,7 @@ app.get("/admin/requests", auth.requireLogin, auth.requirePermission("approve_st
   } catch (error) { routeError(res, error, "STAFF REQUEST LIST ERROR"); }
 });
 
+
 app.post("/admin/requests/:id/decision", auth.requireLogin, auth.requirePermission("approve_staff"), async function (req, res) {
   var decision = String((req.body || {}).decision || "");
   if (["approve", "reject"].indexOf(decision) < 0) return replyError(res, 400, "Choose approve or reject.");

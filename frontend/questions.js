@@ -31,7 +31,7 @@ var PHQ9_QUESTIONS = [
   { en: "Moving or speaking so slowly that other people could have noticed, or the opposite, being so fidgety or restless that you have been moving around a lot more than usual",
     rw: "Kugenda cyangwa ukavuga buhoro kuburyo budasanzwe bikagaragarira abandi cyangwa se bitandukanye ukaba wihuta cyane, kubura umutuzo, ugahorana umuvuduko ukabije (udasanzwe) mu byo ukora." },
   { en: "Thoughts that you would be better off dead or of hurting yourself in some way",
-    rw: "Gutekereza ko wakumva umeze neza wapfuye cyangwa se ukumva ushaka kwigirira nabi." }
+    rw: "Gutekereza ko wakwiyaka ubuzima cyangwa se ukumva ushaka kwigirira nabi." }
 ];
 
 var QUICK_STEM = {
@@ -73,30 +73,26 @@ var UI_TEXT = {
   riskWordLow: { en: "low risk", rw: "ibyago bike" },
   riskWordModerate: { en: "moderate risk", rw: "ibyago biringaniye" },
   riskWordHigh: { en: "high risk", rw: "ibyago byinshi" },
-  declined: { en: "Screening stopped. Continue the normal chronic-disease visit.", rw: "Isuzuma rirahagaze. Komeza isura risanzwe ry’indwara idakira." },
-  riskLow: { en: "Low risk. Screen again at the next routine visit.", rw: "Ibyago bike. Ongera usuzume mu isura risanzwe rikurikira." },
-  riskModerate: { en: "Moderate risk. Add to the psychologist review list.", rw: "Ibyago biringaniye. Shyira uyu murwayi ku rutonde rw’abasuzumwa n’umuhanga mu buzima bwo mu mutwe." },
-  riskHigh: { en: "High risk. Priority psychologist appointment.", rw: "Ibyago byinshi. Tegura gahunda yihutirwa yo kubonana n’umuhanga mu buzima bwo mu mutwe." },
-  quickNegative: { en: "Both answers are No. Low risk, screen again at the next routine visit.", rw: "Ibisubizo byombi ni Oya. Ibyago bike, ongera usuzume mu isura risanzwe rikurikira." },
+  declined: { en: "Screening stopped. Continue the normal chronic-disease visit.", rw: "Isuzuma rirahagaze. Komeza isuzuma risanzwe ry’indwara idakira." },
+  riskLow: { en: "Low risk. Screen again at the next routine visit.", rw: "Nta kibazo kigaragara. Ongera usuzume mu isuzuma risanzwe rikurikira." },
+  riskModerate: { en: "Moderate risk. Add to the psychologist review list.", rw: "Akeneye kwitabwaho byoroheje. Shyira uyu murwayi ku rutonde rw’abasuzumwa n’umuhanga mu buzima bwo mu mutwe." },
+  riskHigh: { en: "High risk. Priority psychologist appointment.", rw: "Akeneye ubufasha bwihutirwa. Tegura gahunda yihutirwa yo kubonana n’umuhanga mu buzima bwo mu mutwe." },
+  quickNegative: { en: "Both answers are No. Low risk, screen again at the next routine visit.", rw: "Ibisubizo byombi ni Oya. Azongera mu isuzuma ritaha." },
   quickPositive: { en: "At least one Yes. Continue to the full questionnaire.", rw: "Hari nibura igisubizo kimwe cya Yego. Komeza ku bibazo byose icyenda." },
-  emergency: { en: "EMERGENCY: the patient reported thoughts of self-harm. Follow the emergency referral steps now and call the on-duty psychologist.", rw: "BYIHUTIRWA: umurwayi avuze ko afite ibitekerezo byo kwigirira nabi. Kurikiza inzira yihutirwa yo kohereza umurwayi ubu, kandi uhamagare umuhanga mu buzima bwo mu mutwe uri ku kazi." },
+  emergency: { en: "EMERGENCY: the patient reported thoughts of self-harm. Follow the emergency referral steps now and call the on-duty psychologist.", rw: "BYIHUTIRWA: umurwayi avuze ko afite ibitekerezo byo kwigirira nabi. Kurikiza inzira yabugenewe wohereze umurwayi ku nzobere mu byerekeye ubuzima bwo mu mutwe." },
   notDiagnosis: { en: "This screen supports the nurse. It does not diagnose.", rw: "Iki gikoresho gifasha umuforomo. Ntigisuzuma indwara." },
   answerAll: { en: "Please answer every question first.", rw: "Banza usubize ibibazo byose." }
 };
 
-var RW_NEEDS_CLINICIAN_CHECK = [
-  "QUICK_STEM", "CONSENT_TEXT.title", "CONSENT_TEXT.body",
-  "UI_TEXT.declined", "UI_TEXT.riskLow", "UI_TEXT.riskModerate", "UI_TEXT.riskHigh",
-  "UI_TEXT.quickNegative", "UI_TEXT.quickPositive", "UI_TEXT.emergency", "UI_TEXT.notDiagnosis"
-];
+var RW_NEEDS_CLINICIAN_CHECK = [];
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     LANGUAGE_DEFAULT: LANGUAGE_DEFAULT,
     PHQ9_OPTIONS: PHQ9_OPTIONS,
+    QUICK_STEM: QUICK_STEM,
     PHQ9_STEM: PHQ9_STEM,
     PHQ9_QUESTIONS: PHQ9_QUESTIONS,
-    QUICK_STEM: QUICK_STEM,
     QUICK_QUESTIONS: QUICK_QUESTIONS,
     CONSENT_TEXT: CONSENT_TEXT,
     UI_TEXT: UI_TEXT,

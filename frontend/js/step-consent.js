@@ -1,4 +1,4 @@
-// Draws the consent screen. onDone(true) means the patient agreed.
+
 function renderConsent(box, onDone) {
   box.innerHTML = "";
 
