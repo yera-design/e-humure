@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07192b" media="(prefers-color-scheme: dark)">
+  <script>(function(){try{var t=localStorage.getItem('ehumure_theme');if(t)document.documentElement.dataset.theme=t;else if(matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='dark'}catch(e){}})()</script>
+  <title>Administration | e-Humure</title>
+  <link rel="icon" href="assets/ehumure-mark.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="offline" data-offline>You are offline. Requests and reports need a connection.</div>
+
+<header class="topbar">
+  <div class="page-shell topbar-inner">
+    <a class="wordmark" href="welcome.html">
+      <span class="brand-art"><img src="assets/ehumure-mark.png" alt=""></span>
+      <span class="brand-copy">
+        <strong>e-Humure</strong>
+        <small data-rw="Umubiri muzima. Umutima utuje. Ejo heza.">Healthy Body. Peaceful Mind. Better Tomorrow.</small>
+      </span>
+    </a>
+    <div class="identity"><span id="admin-welcome"></span><span class="role-badge" id="admin-role">Facility administrator</span></div>
+    <div class="top-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-shell-lang="en" aria-pressed="true">English</button>
+        <button class="secondary" type="button" data-shell-lang="rw" aria-pressed="false">Kinyarwanda</button>
+      </div>
+      <button class="theme-toggle" type="button" data-theme-toggle>Theme</button>
+      <button id="signout" class="secondary" type="button">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<main class="page-shell main">
+  <div class="grid">
+
+    <!-- System administrator -------------------------------------------- -->
+    <section class="card" id="facility-requests-panel" hidden>
+      <p class="eyebrow">Waiting for you</p>
+      <h2>Facility registrations <span id="facility-request-count" class="pill">0</span></h2>
+      <p class="note">Heads of hospitals and clinics who registered themselves. Nothing is created until you approve. Approving generates the facility code.</p>
+      <div id="facility-request-list" aria-live="polite">Loading registrations…</div>
+      <p id="facility-request-message" class="status" role="status" aria-live="polite"></p>
+      <div class="actions"><button id="facility-request-refresh" class="secondary" type="button">Refresh</button></div>
+    </section>
+
+    <section class="card" id="system-overview-panel" hidden>
+      <p class="eyebrow">System overview</p>
+      <h2>All facilities and their staff</h2>
+      <p class="note">Every registered hospital or clinic, its facility administrator, and the staff under that administrator.</p>
+      <div id="system-overview-list" aria-live="polite">Loading facilities…</div>
+      <div class="actions"><button id="overview-refresh" class="secondary" type="button">Refresh</button></div>
+    </section>
+
+    <section class="card" id="audit-panel" hidden>
+      <p class="eyebrow">Activity record</p>
+      <h2>System audit log</h2>
+      <p class="note">System-wide activity across registered facilities.</p>
+      <div id="audit-list" aria-live="polite">Loading audit entries…</div>
+      <div class="actions"><button id="audit-refresh" class="secondary" type="button">Refresh</button></div>
+    </section>
+
+    <!-- Facility administrator ------------------------------------------ -->
+    <section class="card" id="facility-summary-panel" hidden>
+      <p class="eyebrow">Facility performance</p>
+      <h2>My facility at a glance</h2>
+      <p class="note">Counts only. No patient codes and no answers are shown here.</p>
+      <div id="facility-summary" aria-live="polite">Loading summary…</div>
+      <div class="actions"><button id="summary-refresh" class="secondary" type="button">Refresh</button></div>
+    </section>
+
+    <section class="card" id="staff-requests-panel" hidden>
+      <p class="eyebrow">Facility administration</p>
+      <h2>Pending staff requests <span id="request-count" class="pill">0</span></h2>
+      <p class="note">Staff who asked to work at your facility. Approving creates their account.</p>
+      <div id="request-list" aria-live="polite">Loading requests…</div>
+      <p id="staff-request-message" class="status" role="status" aria-live="polite"></p>
+      <div class="actions"><button id="request-refresh" class="secondary" type="button">Refresh</button></div>
+    </section>
+
+  </div>
+</main>
+
+<script src="js/shell-language.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

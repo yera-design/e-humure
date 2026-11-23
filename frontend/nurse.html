@@ -1,128 +1,163 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>e-Humure — nurse</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07192b" media="(prefers-color-scheme: dark)">
+  <script>(function(){try{var t=localStorage.getItem('ehumure_theme');if(t)document.documentElement.dataset.theme=t;else if(matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='dark'}catch(e){}})()</script>
+  <title>Nurse workspace | e-Humure</title>
+  <link rel="icon" href="assets/ehumure-mark.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="card">
-    <div class="lang-switch">
-      <button id="lang-en" type="button">English</button>
-      <button id="lang-rw" type="button">Kinyarwanda</button>
+<div class="offline" data-offline>You are offline. Changes cannot be saved until you reconnect.</div>
+
+<header class="topbar">
+  <div class="page-shell topbar-inner">
+    <a class="wordmark" href="welcome.html">
+      <span class="brand-art"><img src="assets/ehumure-mark.png" alt=""></span>
+      <span class="brand-copy">
+        <strong>e-Humure</strong>
+        <small data-rw="Umubiri muzima. Umutima utuje. Ejo heza.">Healthy Body. Peaceful Mind. Better Tomorrow.</small>
+      </span>
+    </a>
+    <div class="identity"><span id="welcome"></span><span class="role-badge">NCD nurse</span></div>
+    <div class="top-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-shell-lang="en" aria-pressed="true">English</button>
+        <button class="secondary" type="button" data-shell-lang="rw" aria-pressed="false">Kinyarwanda</button>
+      </div>
+      <button class="theme-toggle" type="button" data-theme-toggle>Theme</button>
+      <button id="signout" class="secondary" type="button">Sign out</button>
     </div>
-    <h1>e-Humure</h1>
-    <p class="note" id="welcome"></p>
-        <label for="patient-code">Patient code (no names)</label>
-    <input id="patient-code" placeholder="Filled in automatically" readonly>
-    
-    <h2>New patient</h2>
-    <input id="reg-age" type="number" placeholder="Age">
-    <select id="reg-condition">
-      <option value="diabetes">Diabetes</option>
-      <option value="hypertension">Hypertension</option>
-    </select>
-    <input id="reg-sector" placeholder="Sector">
-    <input id="reg-phone" placeholder="Phone, e.g. +250780000003">
-    <button type="button" id="reg-save">Register patient</button>
-    <p class="note" id="reg-message"></p>
-    <p class="note"><a href="login.html">Sign out</a></p>
   </div>
-  <div id="screen" style="display:none"></div>
-  <div class="card">
-    <h2>My screenings</h2>
-    <div id="screening-list" class="note">Loading...</div>
-    <button type="button" id="scr-refresh" class="secondary">Refresh</button>
-  </div>
-  <script src="../backend/scoring.js"></script>
-  <script src="questions.js"></script>
-  <script src="js/step-consent.js"></script>
-  <script src="js/step-quick.js"></script>
-  <script src="js/step-full.js"></script>
-  <script src="js/app.js"></script>
-  <script>
-    // If no token or wrong role, go back to login.
-       // If no token or wrong role, go back to login.
-    var name = sessionStorage.getItem("ehumure_name");
-    var role = sessionStorage.getItem("ehumure_role");
-    if (!name || role !== "nurse") window.location.href = "login.html";
-    document.getElementById("welcome").textContent = "Signed in as " + name;
+</header>
 
-    // The screening part stays hidden until there is a patient code.
-    function updateScreen() {
-      document.getElementById("screen").style.display =
-        document.getElementById("patient-code").value.trim() ? "" : "none";
-    }
+<main class="page-shell main">
 
-    document.getElementById("reg-save").onclick = function () {
-      var msg = document.getElementById("reg-message");
-      fetch("http://localhost:4000/patients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + sessionStorage.getItem("ehumure_token") },
-        body: JSON.stringify({
-          age: document.getElementById("reg-age").value,
-          condition: document.getElementById("reg-condition").value,
-          sector: document.getElementById("reg-sector").value,
-          phone: document.getElementById("reg-phone").value
-        })
-      })
-        .then(function (res) { return res.json(); })
-        .then(function (d) {
-          if (d.error) { msg.textContent = d.error; return; }
-          document.getElementById("patient-code").value = d.patientId;
-          msg.textContent = "Patient code: " + d.patientId;
-          updateScreen();
-        })
-        .catch(function () { msg.textContent = "Cannot reach the backend."; });
-    };
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Dashboard: search, pending work, completed work                   -->
+  <!-- ---------------------------------------------------------------- -->
+  <section id="nurse-dashboard" class="grid">
 
-    function loadScreenings() {
-      var box = document.getElementById("screening-list");
-      fetch("http://localhost:4000/screenings", {
-        headers: { Authorization: "Bearer " + sessionStorage.getItem("ehumure_token") }
-      })
-        .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
-        .then(function (out) {
-          if (!out.ok) { box.textContent = out.data.error; return; }
-          if (out.data.length === 0) { box.textContent = "No screenings yet."; return; }
-          box.innerHTML = "";
-          var total = document.createElement("p");
-          total.style.fontWeight = "bold";
-          total.textContent = "Total screened: " + out.data.length;
-          box.appendChild(total);
-          out.data.forEach(function (s) {
-            var item = document.createElement("div");
-            item.style.border = "1px solid #d8e0e6";
-            item.style.borderRadius = "8px";
-            item.style.padding = "12px";
-            item.style.margin = "10px 0";
-            item.style.cursor = "pointer";
-            var title = document.createElement("strong");
-            title.textContent = "Patient " + s.patient_id;
-            var when = document.createElement("div");
-            when.textContent = new Date(s.screened_at).toLocaleString();
-            var detail = document.createElement("div");
-            detail.textContent = s.stage === "quick"
-              ? "Quick screen"
-              : "Full screen, score " + s.total_score + (s.item9_flag ? " — EMERGENCY" : "");
-            item.appendChild(title);
-            item.appendChild(when);
-            item.appendChild(detail);
-            item.onclick = function () {
-              document.getElementById("patient-code").value = s.patient_id;
-              updateScreen();
-              window.scrollTo(0, 0);
-            };
-            box.appendChild(item);
-          });
-        })
-        .catch(function () { box.textContent = "Cannot reach the backend."; });
-    }
-    document.getElementById("scr-refresh").onclick = loadScreenings;
-    loadScreenings();
-  </script>
+    <section class="card nurse-dashboard-heading">
+      <div>
+        <p class="eyebrow">Nurse workspace</p>
+        <h1>Screening dashboard</h1>
+        <p class="note">Find a patient, continue pending work, or review completed screenings.</p>
+      </div>
+      <button id="open-registration" type="button">Register patient</button>
+    </section>
+
+    <section class="card" id="search-panel">
+      <p class="eyebrow">Find a patient</p>
+      <h2>Search by patient code</h2>
+      <div class="field">
+        <label for="patient-search">Patient code</label>
+        <input id="patient-search" autocomplete="off" placeholder="P001">
+      </div>
+      <button type="button" id="patient-search-button">Search</button>
+      <div id="patient-search-message" class="status search-results" role="status" aria-live="polite" hidden></div>
+    </section>
+
+    <section class="card" id="pending-panel">
+      <p class="eyebrow">Continue a visit</p>
+      <h2>Pending screenings <span id="pending-total" class="pill">Loading…</span></h2>
+      <div id="pending-list" aria-live="polite">Loading pending screenings…</div>
+      <div class="actions"><button type="button" id="pending-refresh" class="secondary">Refresh</button></div>
+    </section>
+
+    <section class="card">
+      <p class="eyebrow">Completed work</p>
+      <h2>My screenings <span id="screening-total" class="pill">Loading…</span></h2>
+      <div id="screening-list" aria-live="polite">Loading completed screenings…</div>
+      <div class="actions"><button type="button" id="scr-refresh" class="secondary">Refresh</button></div>
+    </section>
+
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Patient registration                                              -->
+  <!-- ---------------------------------------------------------------- -->
+  <section id="registration-panel" class="grid" hidden>
+    <section class="card has-visual">
+      <svg class="card-visual" viewBox="0 0 140 90" aria-hidden="true"><circle cx="70" cy="45" r="38" fill="currentColor" opacity=".12"/><path d="M18 47h27l9-19 17 39 13-28 9 8h30" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="70" cy="45" r="4" fill="currentColor"/></svg>
+      <p class="eyebrow">Patient record</p>
+      <h1>Register a patient</h1>
+      <p class="note">Use the generated code throughout the visit. Do not enter a name.</p>
+
+      <div class="grid registration-fields">
+        <div class="field">
+          <label for="reg-age">Age</label>
+          <input id="reg-age" type="number" min="18" max="120" placeholder="18–120" required>
+        </div>
+        <div class="field">
+          <label for="reg-condition">Long-term condition</label>
+          <select id="reg-condition">
+            <option value="diabetes">Diabetes</option>
+            <option value="hypertension">Hypertension</option>
+            <option value="cardiovascular_disease">Cardiovascular disease (heart disease)</option>
+            <option value="chronic_respiratory_disease">Chronic respiratory disease</option>
+            <option value="cancer">Cancer</option>
+            <option value="other">Other</option>
+          </select>
+          <input id="reg-condition-other" maxlength="120" placeholder="Specify the condition" aria-label="Specify other long-term condition" hidden>
+        </div>
+        <div class="field">
+          <label for="reg-sector">Sector</label>
+          <input id="reg-sector" required>
+        </div>
+        <div class="field">
+          <label for="reg-phone">Phone number</label>
+          <input id="reg-phone" type="tel" inputmode="numeric" autocomplete="tel-national" minlength="10" maxlength="10" pattern="0(72|73|78|79)[0-9]{7}" placeholder="0781234567" aria-describedby="phone-help reg-phone-error" required>
+          <span id="phone-help" class="small muted">Enter 10 digits beginning 072, 073, 078 or 079. Do not add +250.</span>
+          <span id="reg-phone-error" class="error" aria-live="polite"></span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="reg-save">Register patient</button>
+        <button type="button" id="back-to-dashboard-from-registration" class="secondary">Back to dashboard</button>
+      </div>
+      <p id="reg-message" class="status" role="status" aria-live="polite"></p>
+
+      <div id="code-wrap" class="status" hidden>
+        <span class="small muted">Patient code · no name</span>
+        <strong id="patient-code-display" class="patient-code"></strong>
+        <button id="copy-code" class="secondary" type="button">Copy code</button>
+      </div>
+    </section>
+  </section>
+
+  <input id="patient-code" type="hidden">
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Screening flow                                                    -->
+  <!-- ---------------------------------------------------------------- -->
+  <section id="screening-flow" class="card" hidden>
+    <p class="eyebrow">Screening flow</p>
+    <div class="flow-steps">
+      <span class="pill">1 · Register</span>
+      <span class="pill">2 · Consent</span>
+      <span class="pill">3 · Quick questions</span>
+      <span class="pill">4 · PHQ-9</span>
+      <span class="pill">5 · Result</span>
+    </div>
+    <div class="actions"><button type="button" id="back-to-dashboard-from-screening" class="secondary">Back to dashboard</button></div>
+    <div id="screen"></div>
+  </section>
+
+</main>
+
+<script src="/backend/scoring.js"></script>
+<script src="questions.js"></script>
+<script src="js/step-consent.js"></script>
+<script src="js/step-quick.js"></script>
+<script src="js/step-full.js"></script>
+<script src="js/shell-language.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/app.js"></script>
+<script src="js/nurse.js"></script>
 </body>
 </html>
-
-
