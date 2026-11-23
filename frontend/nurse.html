@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="offline" data-offline>You are offline. Changes cannot be saved until you reconnect.</div>
+  <div class="offline" data-offline>You are offline. Changes cannot be saved until you reconnect.</div>
 
 <header class="topbar">
   <div class="page-shell topbar-inner">
@@ -30,9 +30,9 @@
       </div>
       <button class="theme-toggle" type="button" data-theme-toggle>Theme</button>
       <button id="signout" class="secondary" type="button">Sign out</button>
+
     </div>
-  </div>
-</header>
+  </header>
 
 <main class="page-shell main">
 
@@ -111,7 +111,7 @@
         <div class="field">
           <label for="reg-phone">Phone number</label>
           <input id="reg-phone" type="tel" inputmode="numeric" autocomplete="tel-national" minlength="10" maxlength="10" pattern="0(72|73|78|79)[0-9]{7}" placeholder="0781234567" aria-describedby="phone-help reg-phone-error" required>
-          <span id="phone-help" class="small muted">Enter 10 digits beginning 072, 073, 078 or 079. Do not add +250.</span>
+          <span id="phone-help" class="small muted">Enter 10 digits beginning 072, 073, 078 or 079. Do not add 250.</span>
           <span id="reg-phone-error" class="error" aria-live="polite"></span>
         </div>
       </div>
@@ -160,4 +160,3 @@
 <script src="js/app.js"></script>
 <script src="js/nurse.js"></script>
 </body>
-</html>

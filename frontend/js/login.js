@@ -1,53 +1,12 @@
-var API = "http://localhost:4000";
-
-function say(message, isError) {
-  var box = document.getElementById("message");
-  box.textContent = message;
-  box.className = isError ? "error" : "note";
-}
-
-// Keeps the token for this browser tab only; nothing is written to disk.
-function signIn() {
-  var body = {
-    username: document.getElementById("username").value.trim(),
-    password: document.getElementById("password").value
-  };
-  fetch(API + "/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  })
-    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
-    .then(function (out) {
-      if (!out.ok) return say(out.data.error, true);
-            sessionStorage.setItem("ehumure_token", out.data.token);
-      sessionStorage.setItem("ehumure_role", out.data.role);
-      sessionStorage.setItem("ehumure_name", out.data.name);
-      say("Signed in as " + out.data.name + " (" + out.data.role + ")", false);
-
-      // Send each role to their own page.
-      var pages = { nurse: "nurse.html", psychologist: "psychologist.html", desk: "desk.html" };
-      if (pages[out.data.role]) window.location.href = pages[out.data.role];
-    })
-    .catch(function () { say("Cannot reach the backend. Run npm start in backend first.", true); });
-}
-
-function checkRole() {
-  var token = sessionStorage.getItem("ehumure_token") || "";
-  fetch(API + "/me", { headers: { Authorization: "Bearer " + token } })
-    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
-    .then(function (out) {
-      say(out.ok ? out.data.username + " is a " + out.data.role : out.data.error, !out.ok);
-    })
-    .catch(function () { say("Cannot reach the backend. Run npm start in backend first.", true); });
-}
-
-document.getElementById("signin").onclick = signIn;
-document.getElementById("check").onclick = checkRole;
-
 var loginMode = "staff";
 var setupCompletedNow = false;
-function loginMessage(message, error) { var box = document.getElementById("message"); box.textContent = message || ""; box.className = error ? "status error" : "status"; }
+
+function loginMessage(message, error) {
+  var box = document.getElementById("message");
+  box.textContent = message || "";
+  box.className = error ? "status error" : "status";
+}
+
 function setLoginMode(mode) {
   loginMode = mode;
   var admin = mode === "system_admin";
@@ -55,9 +14,12 @@ function setLoginMode(mode) {
   document.getElementById("facility").required = !admin;
   document.getElementById("staff-mode").setAttribute("aria-pressed", String(!admin));
   document.getElementById("system-mode").setAttribute("aria-pressed", String(admin));
-  
+  document.getElementById("login-instructions").textContent = admin
+    ? "System administrator sign-in. No facility is selected for this account."
+    : "Select your facility, then enter your approved staff account.";
   loginMessage("", false);
 }
+
 function loadFacilityList() {
   var select = document.getElementById("facility");
   fetch("/facilities").then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
@@ -80,6 +42,7 @@ function loadFacilityList() {
     }
   } catch (e) {}
 }
+
 function signIn() {
   var body = { username: document.getElementById("username").value.trim(), password: document.getElementById("password").value };
   if (loginMode === "system_admin") body.loginType = "system_admin";
@@ -96,6 +59,7 @@ function signIn() {
       location.href = pages[out.data.role];
     }).catch(function () { loginMessage(navigator.onLine ? "Sign-in could not reach the server. Check that the app is running on your facility network." : "You are offline. Sign-in was not sent.", true); }).finally(function () { button.disabled = false; });
 }
+
 document.getElementById("signin").addEventListener("click", signIn);
 document.getElementById("staff-mode").addEventListener("click", function () { setLoginMode("staff"); });
 document.getElementById("system-mode").addEventListener("click", function () { setLoginMode("system_admin"); });

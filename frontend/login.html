@@ -2,35 +2,93 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>e-Humure staff login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07192b" media="(prefers-color-scheme: dark)">
+  <script>(function(){try{var t=localStorage.getItem('ehumure_theme');if(t)document.documentElement.dataset.theme=t;else if(matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='dark'}catch(e){}})()</script>
+  <title>Staff sign in | e-Humure</title>
+  <link rel="icon" href="assets/ehumure-mark.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="card">
-    <h1>Staff login</h1>
-    <p class="note">Three demo accounts: nurse, psychologist, desk staff.</p>
+  <div class="offline" data-offline>You are offline. Sign-in needs a connection to the facility network.</div>
 
-    <div class="question">
-      <p><label for="username">Username</label></p>
-      <input id="username" type="text" autocomplete="off">
+<header class="topbar">
+  <div class="page-shell topbar-inner">
+    <a class="wordmark" href="welcome.html">
+      <span class="brand-art"><img src="assets/ehumure-mark.png" alt=""></span>
+      <span class="brand-copy">
+        <strong>e-Humure</strong>
+        <small data-rw="Umubiri muzima. Umutima utuje. Ejo heza.">Healthy Body. Peaceful Mind. Better Tomorrow.</small>
+      </span>
+    </a>
+    <div class="top-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-shell-lang="en" aria-pressed="true">English</button>
+        <button class="secondary" type="button" data-shell-lang="rw" aria-pressed="false">Kinyarwanda</button>
+      </div>
+      <button class="theme-toggle" type="button" data-theme-toggle>Theme</button>
     </div>
-
-    <div class="question">
-      <p><label for="password">Password</label></p>
-      <input id="password" type="password" autocomplete="off">
-    </div>
-
-    <div class="actions">
-      <button id="signin">Sign in</button>
-      <button id="check" class="secondary">Check my role</button>
-    </div>
-
-    <p id="message" class="note"></p>
-    <p class="note"><a href="index.html">Back to screening</a></p>
   </div>
+</header>
 
-  <script src="js/login.js"></script>
+<main class="login-layout">
+    <aside class="login-brand-panel lattice">
+    <div class="login-brand-card">
+      <img src="assets/ehumure-mark.png" alt="e-Humure logo">
+      <h2 data-rw="Umubiri muzima. Umutima utuje.">Healthy body. Peaceful mind.</h2>
+      <p data-rw="Ubuzima bwo mu mutwe, bujyanye no kwita ku ndwara zidakira buri munsi.">Mental health, built into everyday chronic-care visits.</p>
+    </div>
+
+    </aside>
+
+  <section class="login-form-area">
+    <div class="login-form-card">
+      <p class="eyebrow" data-rw="Uruhushya rw'abakozi">Staff access</p>
+      <h1 data-rw="Injira">Sign in</h1>
+      <p class="note" id="login-instructions">Select your facility, then enter your approved staff account.</p>
+
+      <div class="mode-switch" role="group" aria-label="Sign-in account type">
+        <button id="staff-mode" type="button" aria-pressed="true">Facility staff</button>
+        <button id="system-mode" type="button" aria-pressed="false" hidden>System administrator</button>
+      </div>
+
+      <div class="field" id="facility-field">
+        <label for="facility">Health center or hospital</label>
+        <select id="facility" required><option value="">Loading facilities…</option></select>
+      </div>
+<div class="field">
+        <label for="username">Username</label>
+        <input id="username" type="text" autocomplete="username" placeholder="e.g. m.uwase" required>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-wrap">
+          <input id="password" type="password" autocomplete="current-password" placeholder="Your password" required>
+          <button type="button" id="password-visibility" aria-pressed="false">Show</button>
+        </div>
+      </div>
+
+      <div class="actions"><button id="signin" class="login-submit" type="button">Sign in</button></div>
+      <p id="message" class="status" role="status" aria-live="polite"></p>
+
+      <div class="login-links">
+        <a href="request-access.html">Request a staff account</a>
+        <a href="register-facility.html">Register a hospital or clinic</a>
+        <a id="setup-link" href="setup.html" hidden>Set up the first system administrator</a>
+      </div>
+
+      <p class="small note">Staff access is approved by a facility administrator. If your facility isn't listed, ask your system administrator to add it.</p>
+    </div>
+      </section>
+
+    </main>
+  
+
+  <script src="js/shell-language.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/login.js"></script>
 </body>
 </html>
 <!doctype html>
