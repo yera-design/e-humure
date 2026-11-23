@@ -27,10 +27,20 @@ function resetRegistrationForm() {
   document.getElementById("reg-condition").selectedIndex = 0;
   document.getElementById("reg-condition-other").hidden = true;
   document.getElementById("reg-phone-error").textContent = "";
+  document.getElementById("reg-phone").classList.remove("field-invalid");
+  document.getElementById("reg-phone").removeAttribute("aria-invalid");
   var message = document.getElementById("reg-message"); message.textContent = ""; message.className = "status";
   document.getElementById("code-wrap").hidden = true;
   document.getElementById("patient-code-display").textContent = "";
 }
+// As soon as the nurse starts changing the number, the duplicate warning goes.
+document.getElementById("reg-phone").addEventListener("input", function () {
+  if (!this.classList.contains("field-invalid")) return;
+  this.classList.remove("field-invalid");
+  this.removeAttribute("aria-invalid");
+  document.getElementById("reg-phone-error").textContent = "";
+  var message = document.getElementById("reg-message"); message.textContent = ""; message.className = "status";
+});
 window.nurseStartNewPatient = function () {
   document.getElementById("patient-code").value = "";
   resetRegistrationForm();
@@ -88,9 +98,14 @@ function registerPatient() {
       if (out.data.code === "duplicate_phone") {
         // Blocked: this number already belongs to another patient. No record
         // was saved and nothing about the other patient is shown.
+        // Shown on the page itself (not a browser popup), in the nurse's
+        // chosen language, next to the field that needs changing.
+        var phoneInput = document.getElementById("reg-phone");
         phoneError.textContent = "This phone number is already registered. Use the patient's own number.";
-        document.getElementById("reg-phone").focus();
-        if (typeof window.alert === "function") window.alert(out.data.error);
+        phoneInput.classList.add("field-invalid");
+        phoneInput.setAttribute("aria-invalid", "true");
+        phoneInput.focus();
+        phoneInput.select();
       }
       return statusMessage("reg-message", out.data.error || "Patient could not be registered.", true);
     }
