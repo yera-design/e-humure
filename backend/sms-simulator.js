@@ -1,4 +1,6 @@
-
+/* backend/sms-simulator.js | owner: Djibril | card: S2-03 | branch: feature/djibril-s2-03-sms-sim
+   Run: node backend/sms-simulator.js
+   Env: FAIL_RATE=0.3 (fraction of calls that return 500, default 0) */
 var express = require("express");
 var app = express();
 var PORT = 4002;
