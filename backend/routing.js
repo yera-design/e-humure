@@ -21,9 +21,10 @@
           15 to 27, goes to a PSYCHIATRIC NURSE at the patient's own facility;
         - the ONLY route to a CLINICAL PSYCHOLOGIST is a psychiatric nurse
           escalating a case as beyond what they can handle, with a reason;
-        - exception, availability only: if the facility has no active
-          psychiatric nurse, the alert goes to a psychologist in the district
-          so that it is never lost.
+        - if the facility has no active psychiatric nurse yet, the alert is
+          NOT sent to a psychologist. It waits at the facility, open,
+          unassigned and urgent, and goes to the first psychiatric nurse
+          approved there (changed 2026-11-23 with the product owner).
 
    4. Urgency is a separate flag from the target. Item 9 above 0 is always
       urgent, and so is a severe score, so the nurse sees it at the top of the
@@ -169,3 +170,4 @@ module.exports = {
   canEscalate: canEscalate,
   FIRST_VISIT_REQUIRED: FIRST_VISIT_REQUIRED
 };
+

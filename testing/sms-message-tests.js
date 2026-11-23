@@ -68,6 +68,25 @@ check("a staff member with no contact on file gets no SMS",
 check("a staff member with an unusable contact gets no SMS, and no throw",
   worker.recipientNumber({ recipient_kind: "staff", staff_contact_enc: phone.encryptContact("not-a-number") }) === null);
 
+console.log("\n6b. Access approved");
+var approved = worker.buildMessage({ message_type: "access_approved" });
+check("staff approval says access is approved and they can sign in",
+  /Your access has been approved\. You can now sign in\./.test(approved), approved);
+check("staff approval is bilingual, Kinyarwanda first",
+  approved.indexOf("Uburenganzira bwawe bwemejwe") === 0 || approved.indexOf("e-Humure: Uburenganzira") === 0, approved);
+check("staff approval carries no facility code", !/Facility code/.test(approved), approved);
+var headApproved = worker.buildMessage({ message_type: "access_approved", facility_code: "KIM-01" });
+check("facility head approval carries the facility code",
+  /Facility code: KIM-01\./.test(headApproved) && /Kode y'ivuriro: KIM-01\./.test(headApproved), headApproved);
+
+console.log("\n6c. Duplicate patient phone fingerprint");
+check("the same number always gives the same fingerprint",
+  phone.phoneFingerprint("0781234567") === phone.phoneFingerprint("0781234567"));
+check("different numbers give different fingerprints",
+  phone.phoneFingerprint("0781234567") !== phone.phoneFingerprint("0781234568"));
+check("the fingerprint does not contain the number",
+  phone.phoneFingerprint("0781234567").indexOf("781234567") < 0);
+
 console.log("\n7. 077 is no longer a usable prefix");
 check("077 is rejected as a patient number", phone.isRwandaMobile("0771234567") === false);
 ["0721234567", "0731234567", "0781234567", "0791234567"].forEach(function (number) {

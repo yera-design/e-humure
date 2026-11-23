@@ -166,6 +166,7 @@ function saveScreening(stage, answers) {
     .then(function (res) { return res.json(); })
     .then(function (data) {
       state.saved = data.error ? "Not saved: " + data.error : "Screening saved.";
+      state.alertWarning = data.error ? "" : (data.alertWarning || "");
       render();
       if (typeof loadScreenings === "function") loadScreenings();
       if (typeof loadPendingScreenings === "function") loadPendingScreenings();
@@ -254,6 +255,13 @@ function showResult(box, result) {
     card.appendChild(saved);
   }
 
+  if (state.alertWarning) {
+    var nobody = document.createElement("p");
+    nobody.className = "status error";
+    nobody.textContent = state.alertWarning;
+    card.appendChild(nobody);
+  }
+
   card.appendChild(restartButton());
   if (sessionStorage.getItem("ehumure_role") === "ncd_nurse" && typeof window.nurseBackToDashboard === "function") {
     var dashboardActions = document.createElement("div"); dashboardActions.className = "actions";
@@ -268,7 +276,12 @@ function restartButton() {
   actions.className = "actions";
   var again = document.createElement("button");
   again.textContent = text(UI_TEXT.startOver);
-  again.onclick = startOver;
+  // On the nurse workspace a new screening starts with registering the next
+  // patient. Elsewhere it simply restarts the questions.
+  again.onclick = function () {
+    if (typeof window.nurseStartNewPatient === "function") window.nurseStartNewPatient();
+    else startOver();
+  };
   actions.appendChild(again);
   return actions;
 }
@@ -280,5 +293,6 @@ document.addEventListener("ehumure:language", function (event) {
 document.addEventListener("DOMContentLoaded", function () {
   setLanguage(typeof window.getShellLanguage === "function" ? window.getShellLanguage() : LANGUAGE);
 });
+
 
 

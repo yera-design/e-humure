@@ -71,6 +71,14 @@ check("does not see a case at another facility",
 check("loses sight of a case once it is escalated",
   visibility.canSeeAlert(NURSE, alert({ requiresSpecialist: true, assignedStaffId: NURSE.staffId })) === false);
 
+console.log("\n4b. Alerts raised before any psychiatric nurse existed");
+check("a nurse sees an unheld alert at their own facility (it waited for them)",
+  visibility.canSeeAlert(NURSE, alert({ requiresSpecialist: false, assignedStaffId: null })) === true);
+check("a nurse does not see an unheld alert at another facility",
+  visibility.canSeeAlert(NURSE, alert({ requiresSpecialist: false, assignedStaffId: null, patientFacilityId: "f-other" })) === false);
+check("an unheld, never-escalated alert is not a psychologist's",
+  visibility.canSeeAlert(HOSPITAL, alert({ requiresSpecialist: false, assignedStaffId: null })) === false);
+
 console.log("\n5. Closed alerts are off every dashboard");
 ["closed", "acknowledged"].forEach(function (status) {
   check("status '" + status + "' is not listed as open",

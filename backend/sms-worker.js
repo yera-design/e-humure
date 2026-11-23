@@ -1,5 +1,5 @@
 /* backend/sms-worker.js
-   Processes queued appointment messages using the configured provider.
+   Processes queued appointment and access-approval messages using the configured provider.
    Africa's Talking transient network outages fall back to the local simulator
    only after the retry limit; that outcome is explicitly stored as simulated.
 */
@@ -105,11 +105,13 @@ async function processOne() {
     await client.query("BEGIN");
 
     var claimed = await client.query(
-      "SELECT r.reminder_id,r.appointment_id,r.attempts,r.message_type,r.recipient_kind, " +
+      // Approval messages have no appointment, so the appointment and patient
+      // are LEFT joins. They are always addressed to staff.
+      "SELECT r.reminder_id,r.appointment_id,r.attempts,r.message_type,r.recipient_kind,r.facility_code, " +
       "a.patient_id,a.scheduled_for,a.location,p.phone_enc,f.name AS facility_name, " +
       "st.contact AS staff_contact_enc,st.full_name AS staff_name " +
-      "FROM sms_reminder r JOIN appointment a ON a.appointment_id=r.appointment_id " +
-      "JOIN patient p ON p.patient_id=a.patient_id " +
+      "FROM sms_reminder r LEFT JOIN appointment a ON a.appointment_id=r.appointment_id " +
+      "LEFT JOIN patient p ON p.patient_id=a.patient_id " +
       "LEFT JOIN facility f ON f.facility_id=p.facility_id " +
       "LEFT JOIN staff st ON st.staff_id=r.recipient_staff_id " +
       "WHERE r.status='queued' AND r.send_on<=now() ORDER BY r.send_on FOR UPDATE OF r SKIP LOCKED LIMIT 1"
@@ -328,3 +330,4 @@ module.exports = {
   formatWorkerLog: formatWorkerLog,
   processOne: processOne
 };
+
