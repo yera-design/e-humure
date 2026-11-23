@@ -49,11 +49,21 @@
     "Enter 10 digits beginning 072, 073, 078 or 079. Do not add +250.": "Andika imibare 10 itangirira kuri 072, 073, 078 cyangwa 079. Ntushyiremo +250.",
 
     /* -- Home page -------------------------------------------------------- */
-    "Staff sign in": "Injira abakozi",
+    "Staff sign in": "Injira",
 
     /* -- Sign in ---------------------------------------------------------- */
     "Staff access": "Uruhushya rw'abakozi",
     "Sign in": "Injira",
+
+    /* -- Patient registration and screening result ------------------------ */
+    "This phone number is already registered. Use the patient's own number.": "Iyi nimero ya telefoni isanzwe yanditse. Koresha nimero y'umurwayi ubwe.",
+    "This phone number is already registered to another patient. Each patient must use their own phone number. Ask the patient for a number that belongs to them.": "Iyi nimero ya telefoni isanzwe yanditswe ku wundi murwayi. Buri murwayi agomba gukoresha nimero ye bwite. Saba umurwayi nimero ye bwite.",
+    "No psychiatric nurse is registered at this facility yet. This alert is saved, open and marked URGENT, and will go to the first psychiatric nurse approved here. Tell the head of the facility now.": "Nta muforomo w'indwara zo mu mutwe uranditswe muri iri vuriro. Iyi nteguza yabitswe, irafunguye kandi ni IYIHUTIRWA; izahabwa umuforomo w'indwara zo mu mutwe wa mbere uzemezwa hano. Menyesha umuyobozi w'ivuriro nonaha.",
+
+    /* -- Facility head warnings ------------------------------------------- */
+    "Some open alerts have nobody assigned. Register a psychiatric nurse at this facility now.": "Hari integuza zifunguye zitarahabwa umukozi. Andikisha umuforomo w'indwara zo mu mutwe muri iri vuriro nonaha.",
+    "Some escalated alerts have nobody assigned. Register a clinical psychologist in this district now.": "Hari integuza zoherejwe ku nzobere zitarahabwa umukozi. Andikisha inzobere mu mitekerereze muri aka karere nonaha.",
+    "Some open alerts have nobody assigned. Register a psychiatric nurse at this facility and a clinical psychologist in this district now.": "Hari integuza zifunguye zitarahabwa umukozi. Andikisha umuforomo w'indwara zo mu mutwe muri iri vuriro n'inzobere mu mitekerereze muri aka karere nonaha.",
     "Select your facility, then enter your approved staff account.": "Hitamo ivuriro ukoreramo, hanyuma winjire ukoresheje konti yemejwe.",
     "System administrator sign-in. No facility is selected for this account.": "Kwinjira k'umuyobozi wa sisitemu. Konti ye ntihuzwa n'ivuriro.",
     "Facility staff": "Abakozi b'ivuriro",
@@ -256,3 +266,4 @@
 
   apply(window.getShellLanguage());
 })();
+

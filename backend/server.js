@@ -97,6 +97,55 @@ async function queueAppointmentReminders(client, appointmentId, scheduledFor, st
     "INSERT INTO sms_reminder(reminder_id,appointment_id,send_on,message_type,recipient_kind,recipient_staff_id,status) VALUES($1,$2,GREATEST($3::timestamptz,now()),'staff_reminder','staff',$4,'queued')",
     [uuidv4(), appointmentId, dayBefore, staffId]);
 }
+/* Queue the "your access has been approved" SMS for a newly approved staff
+   member or facility head. Sent once, straight away, through the same worker
+   as every other SMS. Nothing is ever sent on rejection. */
+async function queueAccessApprovedSms(client, staffId, facilityCode) {
+  await client.query(
+    "INSERT INTO sms_reminder(reminder_id,appointment_id,send_on,message_type,recipient_kind,recipient_staff_id,facility_code,status) VALUES($1,NULL,now(),'access_approved','staff',$2,$3,'queued')",
+    [uuidv4(), staffId, facilityCode || null]);
+}
+
+/* Alerts that were raised while nobody could take them wait, unassigned, at
+   the facility (or, once escalated, in the district). The moment the first
+   psychiatric nurse or clinical psychologist is approved they receive them, so
+   no alert raised before their account existed is ever left behind. */
+async function handOverWaitingAlerts(client, staffId, role, facilityId) {
+  if (role === "psychiatric_nurse") {
+    var nurseResult = await client.query(
+      "UPDATE risk_alert a SET assigned_staff_id=$1 FROM screening s JOIN patient p ON p.patient_id=s.patient_id " +
+      "WHERE a.screening_id=s.screening_id AND p.facility_id=$2 AND a.status='open' AND NOT a.requires_specialist " +
+      "AND a.assigned_staff_id IS NULL AND a.psychologist_id IS NULL RETURNING a.alert_id", [staffId, facilityId]);
+    return nurseResult.rowCount;
+  }
+  if (role === "clinical_psychologist") {
+    var psychResult = await client.query(
+      "UPDATE risk_alert a SET assigned_staff_id=$1 FROM screening s JOIN patient p ON p.patient_id=s.patient_id " +
+      "JOIN facility f ON f.facility_id=p.facility_id JOIN facility mine ON mine.facility_id=$2 " +
+      "WHERE a.screening_id=s.screening_id AND f.district=mine.district AND a.status='open' AND a.requires_specialist " +
+      "AND a.assigned_staff_id IS NULL AND a.psychologist_id IS NULL RETURNING a.alert_id", [staffId, facilityId]);
+    return psychResult.rowCount;
+  }
+  return 0;
+}
+
+/* Fill phone_hash for patients registered before the duplicate-number check
+   existed. Runs once at start-up and touches only rows still missing it. */
+async function backfillPatientPhoneHashes() {
+  try {
+    var rows = await pool.query("SELECT patient_id,phone_enc FROM patient WHERE phone_hash IS NULL");
+    for (var i = 0; i < rows.rows.length; i++) {
+      try {
+        var number = phone.decryptPhone(rows.rows[i].phone_enc);
+        await pool.query("UPDATE patient SET phone_hash=$2 WHERE patient_id=$1 AND phone_hash IS NULL", [rows.rows[i].patient_id, phone.phoneFingerprint(number)]);
+      } catch (error) { console.error("PHONE HASH BACKFILL: could not read patient " + rows.rows[i].patient_id); }
+    }
+    if (rows.rows.length) console.log("Phone fingerprints filled for " + rows.rows.length + " existing patient(s).");
+  } catch (error) {
+    console.error("PHONE HASH BACKFILL skipped:", error.message, "(apply database/migrate_sprint12_duplicates_approval_sms_alert_routing.sql)");
+  }
+}
+
 function checkAnswerArrays(body) {
   var quick = body.quickAnswers;
   var full = body.fullAnswers;
@@ -250,7 +299,10 @@ app.post("/admin/requests/:id/decision", auth.requireLogin, auth.requirePermissi
       if (!selected.rowCount) { var missing = new Error("Pending request was not found in this facility."); missing.status = 404; throw missing; }
       var request = selected.rows[0];
       if (decision === "approve") {
-        await client.query("INSERT INTO staff(staff_id,full_name,contact,username,role,facility_id,password_hash,is_active) VALUES($1,$2,$3,$4,$5,$6,$7,TRUE)", [uuidv4(), request.full_name, request.contact, request.username, request.role, request.facility_id, request.password_hash]);
+        var newStaffId = uuidv4();
+        await client.query("INSERT INTO staff(staff_id,full_name,contact,username,role,facility_id,password_hash,is_active) VALUES($1,$2,$3,$4,$5,$6,$7,TRUE)", [newStaffId, request.full_name, request.contact, request.username, request.role, request.facility_id, request.password_hash]);
+        await handOverWaitingAlerts(client, newStaffId, request.role, request.facility_id);
+        await queueAccessApprovedSms(client, newStaffId, null);
       }
       await client.query("UPDATE staff_access_request SET status=$2,reviewed_by=$3,reviewed_at=now() WHERE request_id=$1", [request.request_id, decision === "approve" ? "approved" : "rejected", req.user.staffId]);
       return request;
@@ -263,6 +315,8 @@ app.post("/admin/requests/:id/decision", auth.requireLogin, auth.requirePermissi
     routeError(res, error, "STAFF REQUEST DECISION ERROR");
   }
 });
+
+var DUPLICATE_PHONE_MESSAGE = "This phone number is already registered to another patient. Each patient must use their own phone number. Ask the patient for a number that belongs to them.";
 
 app.post("/patients", auth.requireLogin, auth.requirePermission("create_patient"), async function (req, res) {
   var body = req.body || {};
@@ -277,16 +331,30 @@ app.post("/patients", auth.requireLogin, auth.requirePermission("create_patient"
   if (condition !== "other") conditionOther = "";
   if (!sector || sector.length > 120) return replyError(res, 400, "Enter a sector (up to 120 characters).");
   if (!phone.isRwandaMobile(phoneNumber)) return replyError(res, 400, "Enter a valid 10-digit Rwanda mobile number starting with 072, 073, 078 or 079. Do not include +250.");
+  var phoneHash = phone.phoneFingerprint(phoneNumber);
   try {
     var patientId = await transaction(async function (client) {
+      // Every patient must have their own number, checked across ALL
+      // facilities. The lock makes two nurses saving the same number at the
+      // same moment queue behind each other. Nothing about the other patient
+      // is ever returned.
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["ehumure:patient-phone:" + phoneHash]);
+      var taken = await client.query("SELECT 1 FROM patient WHERE phone_hash=$1 LIMIT 1", [phoneHash]);
+      if (taken.rowCount) { var duplicate = new Error(DUPLICATE_PHONE_MESSAGE); duplicate.status = 409; duplicate.duplicatePhone = true; throw duplicate; }
       var seq = await client.query("SELECT nextval('patient_code_seq') AS n");
       var id = "P" + String(seq.rows[0].n).padStart(3, "0");
-      await client.query("INSERT INTO patient(patient_id,age,chronic_condition,chronic_condition_other,sector,phone_enc,consent_given_at,facility_id) VALUES($1,$2,$3,$4,$5,$6,NULL,$7)", [id, age, condition, conditionOther || null, sector, phone.encryptPhone(phoneNumber), req.user.facilityId]);
+      await client.query("INSERT INTO patient(patient_id,age,chronic_condition,chronic_condition_other,sector,phone_enc,phone_hash,consent_given_at,facility_id) VALUES($1,$2,$3,$4,$5,$6,$7,NULL,$8)", [id, age, condition, conditionOther || null, sector, phone.encryptPhone(phoneNumber), phoneHash, req.user.facilityId]);
       return id;
     });
     await audit.logAccess(req.user.staffId, "patient_registered", "patient", patientId, req);
     res.status(201).json({ patientId: patientId });
-  } catch (error) { routeError(res, error, "PATIENT REGISTRATION ERROR"); }
+  } catch (error) {
+    if (error.duplicatePhone) {
+      await audit.logAccess(req.user.staffId, "patient_registration_duplicate_phone", "patient", "duplicate-phone", req, "denied");
+      return res.status(409).json({ error: error.message, code: "duplicate_phone" });
+    }
+    routeError(res, error, "PATIENT REGISTRATION ERROR");
+  }
 });
 
 app.get("/patients/search", auth.requireLogin, auth.requirePermission("read_patients"), async function (req, res) {
@@ -428,23 +496,17 @@ app.post("/score", auth.requireLogin, auth.requirePermission("record_screening")
       if (route.needsAlert) {
         // Lock the facility row so two screenings saved at the same moment
         // cannot both read the same "fewest open alerts" count.
-        var facility = await client.query("SELECT district FROM facility WHERE facility_id=$1 FOR UPDATE", [req.user.facilityId]);
-        var district = facility.rows[0].district;
+        await client.query("SELECT facility_id FROM facility WHERE facility_id=$1 FOR UPDATE", [req.user.facilityId]);
         var assigned = await assignLeastLoadedNurse(client, req.user.facilityId);
+        // Every alert goes to a psychiatric nurse first. A psychologist only
+        // receives a case when a nurse escalates it after the first visit.
+        // If this facility has no psychiatric nurse yet, the alert is still
+        // written: open, unassigned and URGENT, waiting at the facility. The
+        // first psychiatric nurse approved here receives it automatically.
         var specialist = false;
-        if (!assigned) {
-          // Availability fallback only: the facility has no active psychiatric
-          // nurse, so a psychologist takes it rather than the case being lost.
-          // Own facility first, then anywhere in the district.
-          assigned = await assignLeastLoadedPsychologist(client, req.user.facilityId, district);
-          specialist = true;
-        }
-        // No one available at all: the alert is still written, unassigned and
-        // flagged urgent, so it stays visible instead of disappearing.
         var urgent = route.urgent || (!assigned);
-        alertWarning = assigned ? null : (specialist
-          ? "No psychiatric nurse or clinical psychologist is available. This alert is open and marked URGENT; tell the facility administrator now."
-          : "No one is available to take this alert. It is open and marked URGENT; tell the facility administrator now.");
+        alertWarning = assigned ? null
+          : "No psychiatric nurse is registered at this facility yet. This alert is saved, open and marked URGENT, and will go to the first psychiatric nurse approved here. Tell the head of the facility now.";
         await client.query(
           "INSERT INTO risk_alert(alert_id,screening_id,psychologist_id,assigned_staff_id,requires_specialist,risk_level,status,urgent,route_reason) VALUES($1,$2,NULL,$3,$4,$5,'open',$6,$7)",
           [uuidv4(), screenId, assigned, specialist, route.risk, urgent, route.reason]);
@@ -726,8 +788,12 @@ app.post("/admin/facility-requests/:requestId/decision", auth.requireLogin, auth
       var facilityId = await nextFacilityCode(client, request.facility_name);
       await client.query("INSERT INTO facility(facility_id,name,district,facility_type,contact) VALUES($1,$2,$3,$4,$5)",
         [facilityId, request.facility_name, request.district, request.facility_type, request.contact]);
+      var headStaffId = uuidv4();
       await client.query("INSERT INTO staff(staff_id,full_name,username,role,facility_id,password_hash,contact,is_active) VALUES($1,$2,$3,'facility_admin',$4,$5,$6,TRUE)",
-        [uuidv4(), request.admin_full_name, request.username, facilityId, request.password_hash, request.contact]);
+        [headStaffId, request.admin_full_name, request.username, facilityId, request.password_hash, request.contact]);
+      // The facility head needs the new facility code to sign in, so the
+      // approval SMS carries it.
+      await queueAccessApprovedSms(client, headStaffId, facilityId);
       await client.query("UPDATE facility_request SET status='approved',reviewed_by=$2,reviewed_at=now(),facility_id=$3 WHERE request_id=$1",
         [req.params.requestId, req.user.staffId, facilityId]);
       return { approved: true, facilityId: facilityId };
@@ -800,6 +866,18 @@ app.get("/system/overview", auth.requireLogin, auth.requirePermission("read_syst
    Facility administrator: counts for their own facility only.
    Deliberately no patient codes and no answers, as required by permissions.js.
 --------------------------------------------------------------------------- */
+/* The red banner on the facility head's dashboard. It names who is missing,
+   and it disappears as soon as the waiting alerts have someone holding them
+   (approving a psychiatric nurse or psychologist hands them over at once). */
+function summaryWarning(counts) {
+  var nurseQueue = Number(counts.unassigned_nurse_queue || 0);
+  var specialistQueue = Number(counts.unassigned_specialist_queue || 0);
+  if (nurseQueue && specialistQueue) return "Some open alerts have nobody assigned. Register a psychiatric nurse at this facility and a clinical psychologist in this district now.";
+  if (nurseQueue) return "Some open alerts have nobody assigned. Register a psychiatric nurse at this facility now.";
+  if (specialistQueue) return "Some escalated alerts have nobody assigned. Register a clinical psychologist in this district now.";
+  return null;
+}
+
 app.get("/facility/summary", auth.requireLogin, auth.requirePermission("read_facility_summary"), async function (req, res) {
   var facilityId = req.user.role === "system_admin" && req.query.facilityId
     ? String(req.query.facilityId).trim().toUpperCase()
@@ -825,7 +903,9 @@ app.get("/facility/summary", auth.requireLogin, auth.requirePermission("read_fac
       "COUNT(*) FILTER (WHERE a.status='open')::int AS open, " +
       "COUNT(*) FILTER (WHERE a.status='closed')::int AS closed, " +
       "COUNT(*) FILTER (WHERE a.urgent AND a.status='open')::int AS urgent_open, " +
-      "COUNT(*) FILTER (WHERE a.assigned_staff_id IS NULL AND a.status='open')::int AS unassigned_open, " +
+      "COUNT(*) FILTER (WHERE COALESCE(a.assigned_staff_id,a.psychologist_id) IS NULL AND a.status='open')::int AS unassigned_open, " +
+      "COUNT(*) FILTER (WHERE COALESCE(a.assigned_staff_id,a.psychologist_id) IS NULL AND a.status='open' AND NOT a.requires_specialist)::int AS unassigned_nurse_queue, " +
+      "COUNT(*) FILTER (WHERE COALESCE(a.assigned_staff_id,a.psychologist_id) IS NULL AND a.status='open' AND a.requires_specialist)::int AS unassigned_specialist_queue, " +
       "COUNT(*) FILTER (WHERE NOT a.requires_specialist)::int AS to_psychiatric_nurse, " +
       "COUNT(*) FILTER (WHERE a.requires_specialist)::int AS to_psychologist, " +
       "COUNT(*) FILTER (WHERE a.escalated_at IS NOT NULL)::int AS escalated " +
@@ -859,9 +939,7 @@ app.get("/facility/summary", auth.requireLogin, auth.requirePermission("read_fac
       alerts: alerts.rows[0],
       openAlertsPerSpecialist: load.rows,
       appointments: appointments.rows[0],
-      warning: Number(alerts.rows[0].unassigned_open) > 0
-        ? "Some open alerts have nobody assigned. Register a psychiatric nurse or a district psychologist now."
-        : null
+      warning: summaryWarning(alerts.rows[0])
     });
   } catch (error) { routeError(res, error, "FACILITY SUMMARY ERROR"); }
 });
@@ -945,6 +1023,7 @@ if (require.main === module) {
   var server = app.listen(PORT, BIND_HOST, function () {
     console.log("e-Humure is available on the facility network at port " + PORT);
     console.log("Open e-Humure on this computer: http://localhost:" + PORT + "/");
+    backfillPatientPhoneHashes();
 
     console.log("Starting e-Humure SMS worker...");
     smsWorkerProcess = spawn(process.execPath, [path.join(__dirname, "sms-worker.js")], {
@@ -989,3 +1068,4 @@ if (require.main === module) {
 }
 
 module.exports = app;
+

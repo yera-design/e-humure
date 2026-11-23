@@ -19,6 +19,25 @@ function showNurseView(view) {
   if (view === "dashboard") document.getElementById("patient-code").value = "";
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+/* "Start a new screening" on the result screen: a new screening is for a new
+   patient, so it opens an empty registration form instead of jumping straight
+   to the questions for the patient just screened. */
+function resetRegistrationForm() {
+  ["reg-age", "reg-sector", "reg-phone", "reg-condition-other"].forEach(function (id) { document.getElementById(id).value = ""; });
+  document.getElementById("reg-condition").selectedIndex = 0;
+  document.getElementById("reg-condition-other").hidden = true;
+  document.getElementById("reg-phone-error").textContent = "";
+  var message = document.getElementById("reg-message"); message.textContent = ""; message.className = "status";
+  document.getElementById("code-wrap").hidden = true;
+  document.getElementById("patient-code-display").textContent = "";
+}
+window.nurseStartNewPatient = function () {
+  document.getElementById("patient-code").value = "";
+  resetRegistrationForm();
+  showNurseView("registration");
+  loadPendingScreenings(); loadCompletedScreenings();
+  document.getElementById("reg-age").focus();
+};
 window.nurseBackToDashboard = function () { showNurseView("dashboard"); loadPendingScreenings(); loadCompletedScreenings(); };
 function updateScreen() {
   document.getElementById("screening-flow").hidden = !document.getElementById("patient-code").value.trim();
@@ -65,7 +84,16 @@ function registerPatient() {
   }).then(function (res) {
     return res.json().then(function (data) { return { ok: res.ok, data: data }; });
   }).then(function (out) {
-    if (!out.ok) return statusMessage("reg-message", out.data.error || "Patient could not be registered.", true);
+    if (!out.ok) {
+      if (out.data.code === "duplicate_phone") {
+        // Blocked: this number already belongs to another patient. No record
+        // was saved and nothing about the other patient is shown.
+        phoneError.textContent = "This phone number is already registered. Use the patient's own number.";
+        document.getElementById("reg-phone").focus();
+        if (typeof window.alert === "function") window.alert(out.data.error);
+      }
+      return statusMessage("reg-message", out.data.error || "Patient could not be registered.", true);
+    }
     choosePatient(out.data.patientId);
     document.getElementById("patient-code-display").textContent = out.data.patientId;
     document.getElementById("code-wrap").hidden = false;
@@ -194,7 +222,7 @@ function loadCompletedScreenings() {
 }
 
 document.getElementById("reg-save").addEventListener("click", registerPatient);
-document.getElementById("open-registration").addEventListener("click", function () { showNurseView("registration"); });
+document.getElementById("open-registration").addEventListener("click", function () { resetRegistrationForm(); showNurseView("registration"); });
 document.getElementById("back-to-dashboard-from-registration").addEventListener("click", function () { showNurseView("dashboard"); });
 document.getElementById("back-to-dashboard-from-screening").addEventListener("click", function () { window.nurseBackToDashboard(); });
 document.getElementById("reg-condition").addEventListener("change", function () {
@@ -223,3 +251,4 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 window.addEventListener("online", function () { document.querySelector("[data-offline]").classList.remove("visible"); });
 window.addEventListener("offline", function () { document.querySelector("[data-offline]").classList.add("visible"); });
+

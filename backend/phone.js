@@ -31,10 +31,20 @@ function decryptPhone(text) {
   return decipher.update(parts[1], "hex", "utf8") + decipher.final("utf8");
 }
 
+/* A one-way fingerprint of a patient phone number.
+   The stored number is encrypted with a random IV, so two encryptions of the
+   same number never match and cannot be compared in SQL. The fingerprint is an
+   HMAC keyed with PHONE_KEY: the same number always gives the same value, so
+   the server can tell that a number is already registered, but the value
+   cannot be turned back into the number. */
+function phoneFingerprint(phone) {
+  return crypto.createHmac("sha256", key()).update("patient-phone:" + String(phone || "").trim()).digest("hex");
+}
+
 function encryptContact(value) { return encryptPhone(value); }
 function decryptContact(value) {
   value = String(value || "");
   return value.indexOf("gcm:") === 0 || /^[a-f0-9]{32}:/i.test(value) ? decryptPhone(value) : value;
 }
 
-module.exports = { encryptPhone: encryptPhone, decryptPhone: decryptPhone, encryptContact: encryptContact, decryptContact: decryptContact, isRwandaMobile: isRwandaMobile };
+module.exports = { phoneFingerprint: phoneFingerprint, encryptPhone: encryptPhone, decryptPhone: decryptPhone, encryptContact: encryptContact, decryptContact: decryptContact, isRwandaMobile: isRwandaMobile };

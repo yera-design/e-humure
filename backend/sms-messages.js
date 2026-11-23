@@ -78,6 +78,18 @@ var TEMPLATES = {
     };
   },
 
+  // Sent once when a staff member or facility head is approved. Nothing is
+  // sent on rejection. A facility head also receives the new facility code,
+  // which they need on the sign-in screen.
+  access_approved: function (field) {
+    return {
+      rw: "e-Humure: Uburenganzira bwawe bwemejwe. Ubu ushobora kwinjira." +
+          (field.facilityCode ? " Kode y'ivuriro: " + field.facilityCode + "." : ""),
+      en: "e-Humure: Your access has been approved. You can now sign in." +
+          (field.facilityCode ? " Facility code: " + field.facilityCode + "." : "")
+    };
+  },
+
   staff_reminder: function (field) {
     return {
       rw: "e-Humure: Urwibutso. Uzakira umurwayi " + field.patientId + " kuri " + field.place.rw +
@@ -88,7 +100,7 @@ var TEMPLATES = {
   }
 };
 
-/* job: { message_type, scheduled_for, facility_name, location, patient_id } */
+/* job: { message_type, scheduled_for, facility_name, location, patient_id, facility_code } */
 function buildMessage(job) {
   job = job || {};
 
@@ -96,6 +108,7 @@ function buildMessage(job) {
   var field = {
     when: formatWhen(job.scheduled_for),
     patientId: String(job.patient_id || "").trim(),
+    facilityCode: String(job.facility_code || "").trim(),
     place: facility ? { rw: facility, en: facility } : DEFAULT_PLACE
   };
 
@@ -110,3 +123,4 @@ module.exports = {
   TIME_ZONE: TIME_ZONE,
   MESSAGE_TYPES: Object.keys(TEMPLATES)
 };
+

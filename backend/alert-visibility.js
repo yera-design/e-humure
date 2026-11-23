@@ -1,16 +1,11 @@
-/* backend/alert-visibility.js
-   Who may see and act on a given alert.
-
-   This rule used to be written out twice in server.js, once in GET /alerts and
-   once in POST /appointments, and a third, looser version lived in the note and
-   close routes. They disagreed, which is how an alert could be assigned to a
-   clinical psychologist and then be invisible to that psychologist. The rule
-   now lives here and both SQL routes build their WHERE clause from it.
-
-   The rule, in words
+/*The rule, in words
    ------------------
-   A psychiatric nurse sees a non-specialist alert when it is assigned to them
-   and the patient is at their own facility.
+   A psychiatric nurse sees a non-specialist alert at their own facility when
+   EITHER it is assigned to them, OR nobody holds it yet. The second case is
+   the safety net for alerts raised before any psychiatric nurse was
+   registered: they wait at the facility, are handed to the first nurse
+   approved there, and stay visible to every nurse there until someone holds
+   them. POST /alerts/:alertId/assign lets a nurse claim one.
 
    A clinical psychologist sees a specialist alert when EITHER
      (a) it is assigned to them - always, whatever facility they work at; or
@@ -46,7 +41,7 @@ var ASSIGNED = "COALESCE(a.assigned_staff_id,a.psychologist_id)";
 
 function whereClause(viewerStaffIdParam) {
   var me = viewerStaffIdParam;
-  return "((viewer.role='psychiatric_nurse' AND p.facility_id=viewer.facility_id AND NOT a.requires_specialist AND " + ASSIGNED + "=" + me + ") " +
+  return "((viewer.role='psychiatric_nurse' AND p.facility_id=viewer.facility_id AND NOT a.requires_specialist AND (" + ASSIGNED + "=" + me + " OR " + ASSIGNED + " IS NULL)) " +
     "OR (viewer.role='clinical_psychologist' AND a.requires_specialist AND (" +
     ASSIGNED + "=" + me + " " +
     "OR (" + ASSIGNED + " IS NULL AND f.district=viewer_facility.district)" +
@@ -65,7 +60,7 @@ function canSeeAlert(viewer, alert) {
   if (viewer.role === "psychiatric_nurse") {
     return !alert.requiresSpecialist &&
       alert.patientFacilityId === viewer.facilityId &&
-      assigned === viewer.staffId;
+      (assigned === viewer.staffId || assigned === null);
   }
 
   if (viewer.role === "clinical_psychologist") {
@@ -82,3 +77,4 @@ module.exports = {
   whereClause: whereClause,
   canSeeAlert: canSeeAlert
 };
+
