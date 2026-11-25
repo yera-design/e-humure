@@ -109,8 +109,10 @@ async function sendAfricaTalkingSms(number, message, settings, requestImpl) {
     headers: {
       apiKey: settings.apiKey,
       Accept: "application/json",
+      "User-Agent": "e-Humure/2.0 (Node.js)",
       "Content-Type": "application/x-www-form-urlencoded"
     },
+
     body: fields.toString(),
     timeoutMs: REQUEST_TIMEOUT_MS
   };
