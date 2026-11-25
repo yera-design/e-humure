@@ -20,21 +20,59 @@ function canClaim() {
   return ["psychiatric_nurse", "clinical_psychologist"].indexOf(sessionStorage.getItem("ehumure_role")) >= 0;
 }
 
+/* Asks for a written reason on the page itself, right under the button that
+   was clicked, instead of a browser pop-up ("localhost says…"). Used for
+   escalating and for closing a case. onSubmit(reason, done) must call done()
+   when finished: done() closes the box, done("message") keeps it open and
+   shows the message. Clicking the same button again closes the box. */
+window.askReason = function (anchor, options, onSubmit) {
+  var next = anchor.nextElementSibling;
+  if (next && next.classList.contains("reason-panel")) { next.remove(); anchor.setAttribute("aria-expanded", "false"); return; }
+  var panel = document.createElement("div"); panel.className = "reason-panel";
+  var id = "reason-" + Math.random().toString(36).slice(2);
+  var label = document.createElement("label"); label.htmlFor = id; label.textContent = options.label;
+  var box = document.createElement("textarea"); box.id = id; box.rows = 3; box.maxLength = 500;
+  if (options.placeholder) box.placeholder = options.placeholder;
+  var count = document.createElement("p"); count.className = "muted reason-count";
+  function updateCount() { count.textContent = box.value.trim().length + " / 500"; }
+  box.addEventListener("input", function () { updateCount(); message.textContent = ""; message.className = "status"; });
+  var message = document.createElement("p"); message.className = "status"; message.setAttribute("role", "status");
+  var row = document.createElement("div"); row.className = "actions";
+  var ok = document.createElement("button"); ok.type = "button"; ok.textContent = options.confirm;
+  var cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "secondary"; cancel.textContent = rw() ? "Reka" : "Cancel";
+  cancel.onclick = function () { panel.remove(); anchor.setAttribute("aria-expanded", "false"); anchor.focus(); };
+  ok.onclick = function () {
+    var reason = box.value.trim();
+    if (reason.length < 10 || reason.length > 500) {
+      message.textContent = rw() ? "Andika impamvu y'inyuguti 10 kugeza kuri 500." : "Write a reason from 10 to 500 characters.";
+      message.className = "status error"; box.focus(); return;
+    }
+    ok.disabled = true; cancel.disabled = true;
+    message.textContent = options.working || ""; message.className = "status";
+    onSubmit(reason, function (errorText) {
+      ok.disabled = false; cancel.disabled = false;
+      if (errorText) { message.textContent = errorText; message.className = "status error"; return; }
+      panel.remove(); anchor.setAttribute("aria-expanded", "false");
+    });
+  };
+  row.appendChild(ok); row.appendChild(cancel);
+  panel.appendChild(label); panel.appendChild(box); panel.appendChild(count); panel.appendChild(message); panel.appendChild(row);
+  anchor.insertAdjacentElement("afterend", panel); anchor.setAttribute("aria-expanded", "true");
+  updateCount(); box.focus();
+};
+
 function escalateAlert(alert, button, statusBox) {
   // The nurse must say why the case is beyond them. The reason is stored on the
   // alert and written to the audit log, so it is not optional.
-  var reason = window.prompt(rw()
-    ? "Andika impamvu iki kibazo kirenze ubushobozi bwawe (inyuguti 10 kugeza 500):"
-    : "Write why this case is beyond what you can handle (10 to 500 characters):", "");
-  if (reason === null) return;
-  reason = String(reason).trim();
-  if (reason.length < 10 || reason.length > 500) {
-    statusBox.textContent = rw()
-      ? "Andika impamvu ngufi, inyuguti 10 kugeza 500."
-      : "Write a short reason, from 10 to 500 characters.";
-    statusBox.className = "status error";
-    return;
-  }
+  window.askReason(button, {
+    label: rw() ? "Andika impamvu iki kibazo kirenze ubushobozi bwawe (inyuguti 10 kugeza 500):" : "Write why this case is beyond what you can handle (10 to 500 characters):",
+    placeholder: rw() ? "Urugero: Ibimenyetso ntibigabanuka nyuma y'isura ya mbere." : "For example: Symptoms not improving after the first visit.",
+    confirm: rw() ? "Ohereza ku nzobere" : "Refer to the psychologist",
+    working: rw() ? "Kohereza ikibazo ku nzobere…" : "Referring the case to a clinical psychologist…"
+  }, function (reason, done) { sendEscalation(alert, reason, button, statusBox, done); });
+}
+
+function sendEscalation(alert, reason, button, statusBox, done) {
   button.disabled = true;
   statusBox.className = "status";
   statusBox.textContent = rw() ? "Kohereza ikibazo ku nzobere…" : "Referring the case to a clinical psychologist…";
@@ -47,8 +85,10 @@ function escalateAlert(alert, button, statusBox) {
         statusBox.textContent = out.data.error || (rw() ? "Ntibyashobotse kohereza ikibazo ku nzobere." : "The alert could not be escalated.");
         statusBox.className = "status error";
         statusBox.scrollIntoView({ block: "nearest" });
+        done(statusBox.textContent);
         return;
       }
+      done();
       if (out.data.warning) {
         statusBox.textContent = rw()
           ? "Nta nzobere ihari muri aka karere. Ikibazo gifunguye kandi cyanditsweho ko ari IHUTIRWA. Menyesha umuyobozi w'ivuriro ako kanya."
@@ -62,7 +102,7 @@ function escalateAlert(alert, button, statusBox) {
       // Hide booking: an escalated case is no longer this nurse's to schedule.
       statusBox.parentNode.querySelectorAll('[data-action="book"]').forEach(function (item) { item.hidden = true; });
       loadAlerts();
-    }).catch(function () { statusBox.textContent = rw()?"Ntibyashobotse kugera kuri seriveri.":"Could not reach the server."; statusBox.className="status error"; })
+    }).catch(function () { statusBox.textContent = rw()?"Ntibyashobotse kugera kuri seriveri.":"Could not reach the server."; statusBox.className="status error"; done(statusBox.textContent); })
     .finally(function () { button.disabled = false; });
 }
 
@@ -152,20 +192,22 @@ function renderDetail(a) {
     var handled = document.createElement("button"); handled.type = "button"; handled.className = "secondary";
     handled.textContent = rw()?"Funga ikibazo (umurwayi yorohewe)":"Close case (patient is well)";
     handled.onclick = function () {
-      var reason = window.prompt(rw()?"Andika impamvu ngufi yo gufunga ikibazo (inyuguti 10 kugeza kuri 500), urugero: Ibimenyetso byashize nyuma y'isura 3.":"Write a short reason for closing the case (10 to 500 characters), for example: Symptoms resolved after 3 visits.", "");
-      if (reason === null) return;
-      reason = reason.trim();
-      if (reason.length < 10 || reason.length > 500) { error.textContent = rw()?"Andika impamvu y'inyuguti 10 kugeza kuri 500.":"Write a reason from 10 to 500 characters."; error.className = "status error"; return; }
-      handled.disabled = true; error.className = "status"; error.textContent = rw()?"Gufunga ikibazo\u2026":"Closing the case\u2026";
-      fetch(API + "/alerts/" + encodeURIComponent(a.alert_id) + "/handled", { method: "POST", headers: authHeaders(true), body: JSON.stringify({ reason: reason }) })
-        .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
-        .then(function (out) {
-          if (!out.ok) { error.textContent = out.data.error || (rw()?"Ntibyashobotse gufunga ikibazo.":"The case could not be closed."); error.className = "status error"; return; }
-          error.textContent = rw()?"Ikibazo cyafunzwe.":"Case closed."; error.className = "status";
-          detail.hidden = true; list.hidden = false; loadAlerts();
-        })
-        .catch(function () { error.textContent = rw()?"Ntibyashobotse kugera kuri seriveri.":"Could not reach the server."; error.className = "status error"; })
-        .finally(function () { handled.disabled = false; });
+      window.askReason(handled, {
+        label: rw() ? "Umurwayi yorohewe? Andika impamvu ngufi yo gufunga ikibazo (inyuguti 10 kugeza kuri 500):" : "Is the patient well? Write a short reason for closing the case (10 to 500 characters):",
+        placeholder: rw() ? "Urugero: Ibimenyetso byashize nyuma y'isura 3." : "For example: Symptoms resolved after 3 visits.",
+        confirm: rw() ? "Funga ikibazo" : "Close the case",
+        working: rw() ? "Gufunga ikibazo\u2026" : "Closing the case\u2026"
+      }, function (reason, done) {
+        fetch(API + "/alerts/" + encodeURIComponent(a.alert_id) + "/handled", { method: "POST", headers: authHeaders(true), body: JSON.stringify({ reason: reason }) })
+          .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
+          .then(function (out) {
+            if (!out.ok) { done(out.data.error || (rw()?"Ntibyashobotse gufunga ikibazo.":"The case could not be closed.")); return; }
+            done();
+            error.textContent = rw()?"Ikibazo cyafunzwe.":"Case closed."; error.className = "status";
+            detail.hidden = true; list.hidden = false; loadAlerts();
+          })
+          .catch(function () { done(rw()?"Ntibyashobotse kugera kuri seriveri.":"Could not reach the server."); });
+      });
     };
     actions.appendChild(handled);
   }

@@ -27,17 +27,20 @@
       .finally(function () { button.disabled = false; });
   }
   function closeCase(item, button, actionMessage) {
-    var reason = window.prompt(text("The patient is well and the case can be closed. Write a short reason (10 to 500 characters), for example: Symptoms resolved after 3 visits.", "Umurwayi yorohewe kandi ikibazo gishobora gufungwa. Andika impamvu ngufi (inyuguti 10 kugeza kuri 500), urugero: Ibimenyetso byashize nyuma y'isura 3."), "");
-    if (reason === null) return;
-    reason = reason.trim();
-    if (reason.length < 10 || reason.length > 500) { showStatus(actionMessage, text("Write a reason from 10 to 500 characters.", "Andika impamvu y'inyuguti 10 kugeza kuri 500."), true); return; }
-    button.disabled = true; showStatus(actionMessage, text("Closing the case…", "Gufunga ikibazo…"), false);
-    request("POST", "/alerts/" + encodeURIComponent(item.alert_id) + "/handled", { reason: reason })
-      .then(function (out) {
-        if (!out.ok) throw new Error(out.data.error || text("The case could not be closed.", "Ntibyashobotse gufunga ikibazo."));
-        loadAppointments(activeSearch()); if (window.loadAlerts) window.loadAlerts(activeSearch());
-      })
-      .catch(function (error) { showStatus(actionMessage, error.message, true); button.disabled = false; });
+    window.askReason(button, {
+      label: text("Is the patient well? Write a short reason for closing the case (10 to 500 characters):", "Umurwayi yorohewe? Andika impamvu ngufi yo gufunga ikibazo (inyuguti 10 kugeza kuri 500):"),
+      placeholder: text("For example: Symptoms resolved after 3 visits.", "Urugero: Ibimenyetso byashize nyuma y'isura 3."),
+      confirm: text("Close the case", "Funga ikibazo"),
+      working: text("Closing the case…", "Gufunga ikibazo…")
+    }, function (reason, done) {
+      request("POST", "/alerts/" + encodeURIComponent(item.alert_id) + "/handled", { reason: reason })
+        .then(function (out) {
+          if (!out.ok) { done(out.data.error || text("The case could not be closed.", "Ntibyashobotse gufunga ikibazo.")); return; }
+          done(); showStatus(actionMessage, text("Case closed.", "Ikibazo cyafunzwe."), false);
+          loadAppointments(activeSearch()); if (window.loadAlerts) window.loadAlerts(activeSearch());
+        })
+        .catch(function () { done(text("Could not reach the server.", "Ntibyashobotse kugera kuri seriveri.")); });
+    });
   }
   function renderNotes(item, parent) {
     parent.querySelectorAll(".appointment-notes").forEach(function (old) { old.remove(); });
@@ -142,12 +145,20 @@
       renderNotes(item, card);
       if (role() === "psychiatric_nurse" && !item.requires_specialist) {
         addButton(card, text("Escalate to clinical psychologist", "Ohereza ku nzobere mu mitekerereze"), true, function (button) {
-          var reason = window.prompt(text("Write why this case needs a psychologist (10 to 500 characters):", "Andika impamvu iki kibazo gikeneye inzobere (inyuguti 10 kugeza kuri 500):"), "");
-          if (reason === null) return;
-          reason = reason.trim(); if (reason.length < 10 || reason.length > 500) { showStatus(actionMessage, text("Write a reason from 10 to 500 characters.", "Andika impamvu y'inyuguti 10 kugeza kuri 500."), true); return; }
-          button.disabled = true; request("POST", "/alerts/" + encodeURIComponent(item.alert_id) + "/escalate", { reason: reason })
-            .then(function (out) { if (!out.ok) throw new Error(out.data.error || "The case could not be escalated."); showStatus(actionMessage, text("The case was referred to the district clinical psychologist.", "Ikibazo cyoherejwe ku nzobere mu mitekerereze yo ku rwego rw'akarere."), false); loadAppointments(activeSearch()); })
-            .catch(function (error) { showStatus(actionMessage, error.message, true); }).finally(function () { button.disabled = false; });
+          window.askReason(button, {
+            label: text("Write why this case needs a psychologist (10 to 500 characters):", "Andika impamvu iki kibazo gikeneye inzobere (inyuguti 10 kugeza kuri 500):"),
+            placeholder: text("For example: Symptoms not improving after the first visit.", "Urugero: Ibimenyetso ntibigabanuka nyuma y'isura ya mbere."),
+            confirm: text("Refer to the psychologist", "Ohereza ku nzobere"),
+            working: text("Referring the case…", "Kohereza ikibazo…")
+          }, function (reason, done) {
+            request("POST", "/alerts/" + encodeURIComponent(item.alert_id) + "/escalate", { reason: reason })
+              .then(function (out) {
+                if (!out.ok) { done(out.data.error || text("The case could not be escalated.", "Ntibyashobotse kohereza ikibazo ku nzobere.")); return; }
+                done(); showStatus(actionMessage, text("The case was referred to the district clinical psychologist.", "Ikibazo cyoherejwe ku nzobere mu mitekerereze yo ku rwego rw'akarere."), false);
+                loadAppointments(activeSearch());
+              })
+              .catch(function () { done(text("Could not reach the server.", "Ntibyashobotse kugera kuri seriveri.")); });
+          });
         });
       }
       var alreadyBooked = upcomingByCase && upcomingByCase[item.alert_id];

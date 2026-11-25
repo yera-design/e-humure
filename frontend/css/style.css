@@ -1252,3 +1252,17 @@ input.field-invalid:focus {
   box-shadow: 0 0 0 3px rgba(192, 57, 43, .22);
 }
 
+/* Reason box for escalating or closing a case: shown on the page under the
+   button, instead of a browser pop-up. */
+.reason-panel {
+  margin: 10px 0 14px;
+  padding: 14px;
+  border: 1px solid var(--brand);
+  border-radius: 12px;
+  background: var(--surface, transparent);
+}
+.reason-panel label { display: block; font-weight: 600; margin-bottom: 6px; }
+.reason-panel textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.reason-panel .reason-count { margin: 4px 0 0; font-size: .85rem; text-align: right; }
+.reason-panel .actions { margin-top: 8px; }
+
