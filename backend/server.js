@@ -664,7 +664,7 @@ app.get("/appointments", auth.requireLogin, auth.requirePermission("read_screeni
   var patientId = String(req.query.patientId || "").trim().toUpperCase();
   if (patientId && !/^(P[0-9]{3,}|P-[0-9]{4,})$/.test(patientId)) return replyError(res, 400, "Enter a patient code such as P001.");
   try {
-    var rows = await pool.query("SELECT a.appointment_id,a.alert_id,a.patient_id,a.scheduled_for,a.location,a.status,a.arrived_at,ra.requires_specialist,ra.escalation_reason,p.phone_enc,f.name AS facility_name,f.district FROM appointment a JOIN risk_alert ra ON ra.alert_id=a.alert_id JOIN patient p ON p.patient_id=a.patient_id JOIN facility f ON f.facility_id=p.facility_id WHERE a.psychologist_id=$1 AND ($2='' OR a.patient_id=$2) ORDER BY a.scheduled_for ASC", [req.user.staffId, patientId]);
+    var rows = await pool.query("SELECT a.appointment_id,a.alert_id,a.patient_id,a.scheduled_for,a.location,a.status,a.arrived_at,ra.requires_specialist,ra.escalation_reason,ra.status AS alert_status,ra.closing_reason,p.phone_enc,f.name AS facility_name,f.district FROM appointment a JOIN risk_alert ra ON ra.alert_id=a.alert_id JOIN patient p ON p.patient_id=a.patient_id JOIN facility f ON f.facility_id=p.facility_id WHERE a.psychologist_id=$1 AND ($2='' OR a.patient_id=$2) ORDER BY a.scheduled_for ASC", [req.user.staffId, patientId]);
     await audit.logAccess(req.user.staffId, patientId ? "search_appointments" : "read_appointments", "appointment", patientId || req.user.facilityId, req);
     res.json(rows.rows.map(function (row) { row.phone = phone.decryptPhone(row.phone_enc); delete row.phone_enc; return row; }));
   } catch (error) { routeError(res, error, "APPOINTMENTS ERROR"); }
@@ -981,16 +981,35 @@ app.patch("/alerts/:alertId/notes/:noteId", auth.requireLogin, auth.requirePermi
   } catch (error) { routeError(res, error, "ALERT NOTE EDIT ERROR"); }
 });
 
-/* Mark an alert handled. Only a clinical psychologist closes a case. */
+/* Close a case once the patient is well.
+   - A psychiatric nurse closes cases she follows herself (not escalated).
+   - An escalated case is closed only by the clinical psychologist holding it.
+   - A short reason (10-500 characters) is required and saved with the case.
+   - Future appointments of the case are cancelled and their queued SMS
+     reminders are stopped, so nobody is reminded about a visit that won't happen. */
 app.post("/alerts/:alertId/handled", auth.requireLogin, auth.requirePermission("close_alert"), async function (req, res) {
+  if (["psychiatric_nurse", "clinical_psychologist"].indexOf(req.user.role) < 0) return replyError(res, 403, "Only mental-health care staff can close cases.");
+  var reason = String((req.body && req.body.reason) || "").trim();
+  if (reason.length < 10 || reason.length > 500) return replyError(res, 400, "Write a short reason for closing the case, from 10 to 500 characters.");
   try {
-    var result = await pool.query(
-      "UPDATE risk_alert SET status='closed',closed_by=$2,closed_at=now() WHERE alert_id=$1 AND status<>'closed' AND COALESCE(assigned_staff_id,psychologist_id)=$2 RETURNING alert_id",
-      [req.params.alertId, req.user.staffId]);
-    if (!result.rowCount) return replyError(res, 404, "This alert is not assigned to you, or it is already closed.");
-    await audit.logAccess(req.user.staffId, "alert_marked_handled", "risk_alert", req.params.alertId, req);
-    res.json({ ok: true });
-  } catch (error) { routeError(res, error, "ALERT HANDLED ERROR"); }
+    var cancelled = await transaction(async function (client) {
+      var found = await client.query(
+        "SELECT alert_id,requires_specialist FROM risk_alert WHERE alert_id=$1 AND status<>'closed' AND COALESCE(assigned_staff_id,psychologist_id)=$2 FOR UPDATE",
+        [req.params.alertId, req.user.staffId]);
+      if (!found.rowCount) { var missing = new Error("This case is not assigned to you, or it is already closed."); missing.status = 404; throw missing; }
+      if (req.user.role === "psychiatric_nurse" && found.rows[0].requires_specialist) {
+        var specialist = new Error("This case was escalated. Only the clinical psychologist can close it."); specialist.status = 403; throw specialist;
+      }
+      await client.query("UPDATE risk_alert SET status='closed',closed_by=$2,closed_at=now(),closing_reason=$3 WHERE alert_id=$1", [req.params.alertId, req.user.staffId, reason]);
+      var appts = await client.query("UPDATE appointment SET status='cancelled' WHERE alert_id=$1 AND status='scheduled' RETURNING appointment_id", [req.params.alertId]);
+      if (appts.rowCount) {
+        await client.query("UPDATE sms_reminder SET status='cancelled',last_error='Case closed' WHERE appointment_id = ANY($1::uuid[]) AND status='queued'", [appts.rows.map(function (r) { return r.appointment_id; })]);
+      }
+      return appts.rowCount;
+    });
+    await audit.logAccess(req.user.staffId, "alert_case_closed", "risk_alert", req.params.alertId, req);
+    res.json({ ok: true, cancelledAppointments: cancelled });
+  } catch (error) { if (error.status) return replyError(res, error.status, error.message); routeError(res, error, "ALERT HANDLED ERROR"); }
 });
 
 /* ---------------------------------------------------------------------------

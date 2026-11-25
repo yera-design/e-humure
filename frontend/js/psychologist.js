@@ -26,6 +26,19 @@
       .catch(function (error) { var message = document.getElementById("appointment-action-message"); if (message) showStatus(message, error.message, true); })
       .finally(function () { button.disabled = false; });
   }
+  function closeCase(item, button, actionMessage) {
+    var reason = window.prompt(text("The patient is well and the case can be closed. Write a short reason (10 to 500 characters), for example: Symptoms resolved after 3 visits.", "Umurwayi yorohewe kandi ikibazo gishobora gufungwa. Andika impamvu ngufi (inyuguti 10 kugeza kuri 500), urugero: Ibimenyetso byashize nyuma y'isura 3."), "");
+    if (reason === null) return;
+    reason = reason.trim();
+    if (reason.length < 10 || reason.length > 500) { showStatus(actionMessage, text("Write a reason from 10 to 500 characters.", "Andika impamvu y'inyuguti 10 kugeza kuri 500."), true); return; }
+    button.disabled = true; showStatus(actionMessage, text("Closing the case…", "Gufunga ikibazo…"), false);
+    request("POST", "/alerts/" + encodeURIComponent(item.alert_id) + "/handled", { reason: reason })
+      .then(function (out) {
+        if (!out.ok) throw new Error(out.data.error || text("The case could not be closed.", "Ntibyashobotse gufunga ikibazo."));
+        loadAppointments(activeSearch()); if (window.loadAlerts) window.loadAlerts(activeSearch());
+      })
+      .catch(function (error) { showStatus(actionMessage, error.message, true); button.disabled = false; });
+  }
   function renderNotes(item, parent) {
     parent.querySelectorAll(".appointment-notes").forEach(function (old) { old.remove(); });
     var section = document.createElement("section"); section.className = "appointment-notes";
@@ -83,7 +96,7 @@
     }
     parent.appendChild(section); loadNotes();
   }
-  function renderAppointment(item, box) {
+  function renderAppointment(item, box, upcomingByCase) {
     var card = document.createElement("article"); card.className = "list-card";
     var heading = document.createElement("h3"); heading.textContent = text("Patient ", "Umurwayi ") + item.patient_id; card.appendChild(heading);
     var site = document.createElement("p"); site.textContent = text("Facility: ", "Ivuriro: ") + (item.facility_name || item.location || "—") + (item.district ? " · " + item.district : ""); card.appendChild(site);
@@ -93,6 +106,14 @@
     status.textContent = text("Status: ", "Imiterere: ") + (statusNames[item.status] || item.status) + (item.arrived_at ? text(" · Attended ", " · Yitabiriye ") + new Date(item.arrived_at).toLocaleString(rw() ? "rw-RW" : "en-RW") : ""); card.appendChild(status);
     var phone = document.createElement("p"); phone.textContent = text("Phone: ", "Telefone: ") + item.phone; card.appendChild(phone);
     var actionMessage = document.createElement("p"); actionMessage.id = "appointment-action-message"; actionMessage.className = "status"; actionMessage.setAttribute("aria-live", "polite"); card.appendChild(actionMessage);
+    if (item.alert_status === "closed") {
+      var closedBox = document.createElement("div"); closedBox.className = "case-transferred";
+      var closedTitle = document.createElement("strong"); closedTitle.textContent = text("CASE CLOSED", "IKIBAZO CYAFUNZWE"); closedBox.appendChild(closedTitle);
+      if (item.closing_reason) { var closedText = document.createElement("p"); closedText.textContent = text("Reason: ", "Impamvu: ") + item.closing_reason; closedBox.appendChild(closedText); }
+      card.appendChild(closedBox);
+      if (item.status === "attended") renderNotes(item, card);
+      box.appendChild(card); return;
+    }
     if (role() === "psychiatric_nurse" && item.requires_specialist) {
       var transferred = document.createElement("div"); transferred.className = "case-transferred";
       var transferTitle = document.createElement("strong"); transferTitle.textContent = text("CASE TRANSFERRED · No longer assigned to you", "IKIBAZO CYOHEREJWE · Ntukigishinzwe"); transferred.appendChild(transferTitle);
@@ -129,12 +150,19 @@
             .catch(function (error) { showStatus(actionMessage, error.message, true); }).finally(function () { button.disabled = false; });
         });
       }
+      var alreadyBooked = upcomingByCase && upcomingByCase[item.alert_id];
+      if (alreadyBooked) {
+        var nextNote = document.createElement("p"); nextNote.className = "note";
+        nextNote.textContent = text("Next appointment already booked: ", "Gahunda ikurikira yamaze guteganywa: ") + new Date(alreadyBooked).toLocaleString(rw() ? "rw-RW" : "en-RW");
+        card.appendChild(nextNote);
+      }
       var followToggle = addButton(card, text("Book another appointment", "Teganya indi gahunda"), false, function () {
         bookingPanel.hidden = !bookingPanel.hidden;
         followToggle.setAttribute("aria-expanded", String(!bookingPanel.hidden));
         if (!bookingPanel.hidden) followDate.focus();
       });
       followToggle.setAttribute("aria-expanded", "false");
+      if (alreadyBooked) followToggle.hidden = true;
       var bookingPanel = document.createElement("div"); bookingPanel.className = "follow-up-booking"; bookingPanel.hidden = true;
       var followLabel = document.createElement("label"); followLabel.textContent = text("Next appointment date and time", "Itariki n'isaha bya gahunda ikurikira"); followLabel.htmlFor = "follow-up-" + item.appointment_id; bookingPanel.appendChild(followLabel);
       var followDate = document.createElement("input"); followDate.type = "datetime-local"; followDate.id = followLabel.htmlFor; bookingPanel.appendChild(followDate);
@@ -146,12 +174,10 @@
           .catch(function (error) { showStatus(actionMessage, error.message, true); }).finally(function () { follow.disabled = false; });
       });
       card.appendChild(bookingPanel);
-      if (role() === "clinical_psychologist") {
-        addButton(card, text("Mark case handled", "Shyira ikibazo ku byarangiye"), true, function (button) {
-          button.disabled = true; request("POST", "/alerts/" + encodeURIComponent(item.alert_id) + "/handled", {})
-            .then(function (out) { if (!out.ok) throw new Error(out.data.error || "The case could not be closed."); showStatus(actionMessage, text("Case marked as handled.", "Ikibazo cyashyizwe ku byarangiye."), false); })
-            .catch(function (error) { showStatus(actionMessage, error.message, true); }).finally(function () { button.disabled = false; });
-        });
+      // Closing: the psychiatric nurse closes cases she follows herself; an
+      // escalated case is closed only by the clinical psychologist.
+      if ((role() === "psychiatric_nurse" && !item.requires_specialist) || role() === "clinical_psychologist") {
+        addButton(card, text("Close case (patient is well)", "Funga ikibazo (umurwayi yorohewe)"), true, function (button) { closeCase(item, button, actionMessage); });
       }
     }
     box.appendChild(card);
@@ -161,9 +187,15 @@
     request("GET", withPatientSearch("/appointments", patientId || ""))
       .then(function (out) {
         if (!out.ok || !Array.isArray(out.data)) throw new Error(out.data.error || "Appointments could not be loaded.");
-        var rows = out.data; document.getElementById("appt-total").textContent = rows.length; document.getElementById("appt-heading-total").textContent = rows.length; box.innerHTML = "";
+        var rows = out.data; box.innerHTML = "";
+        // Count only visits still to come in cases that are not closed;
+        // attended, missed and cancelled visits stay listed as history.
+        var upcomingByCase = {};
+        rows.forEach(function (row) { if (row.status === "scheduled" && row.alert_status !== "closed" && !upcomingByCase[row.alert_id]) upcomingByCase[row.alert_id] = row.scheduled_for; });
+        var upcoming = rows.filter(function (row) { return row.status === "scheduled" && row.alert_status !== "closed"; }).length;
+        document.getElementById("appt-total").textContent = upcoming; document.getElementById("appt-heading-total").textContent = upcoming;
         if (!rows.length) { box.textContent = patientId ? text("No appointments found for this patient code in your assigned work.", "Nta gahunda z'uyu murwayi wabonye mu kazi wahawe.") : text("No appointments are scheduled.", "Nta gahunda zateganyijwe."); return; }
-        rows.forEach(function (item) { renderAppointment(item, box); });
+        rows.forEach(function (item) { renderAppointment(item, box, upcomingByCase); });
       }).catch(function (error) { document.getElementById("appt-total").textContent = "—"; document.getElementById("appt-heading-total").textContent = "—"; showStatus(box, navigator.onLine ? error.message : text("You are offline. Appointments are unavailable until you reconnect.", "Nta murongo. Gahunda zizaboneka umaze kongera kwihuza."), true); });
   }
   function search(event) {
@@ -188,4 +220,5 @@
   window.loadAppointments = loadAppointments;
   document.addEventListener("ehumure:language", function () { loadAppointments(activeSearch()); });
 })();
+
 

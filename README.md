@@ -63,7 +63,7 @@ You will install two programs:
 
 > **Tip:** Keep a notebook (paper or a private text file) for this setup. You
 > will create a few passwords and keys that you must not lose. They are marked
-> 📝 below.
+> below.
 
 ---
 
@@ -116,7 +116,7 @@ How to use it:
 1. Go to <https://www.postgresql.org/download/windows/> and download the installer.
 2. Run it. Keep the defaults, **but pay attention to two screens:**
    - **Password:** it asks for a password for the `postgres` superuser.
-     📝 **Write this password down.** You need it in step 7.
+      **Write this password down.** You need it in step 7.
    - **Port:** leave it at **5432**.
 3. Finish the installer. You can skip "Stack Builder" at the end.
 4. **Make the `psql` command available in the terminal.** The installer often
@@ -251,7 +251,7 @@ You are in the right place when the prompt changes to `postgres=#`.
 
 ### 7.2 Create the user and the database
 
-📝 Choose a password for the `ehumure` database user and write it down. **Use
+Choose a password for the `ehumure` database user and write it down. **Use
 only letters and numbers** (for example `Humure2026Kigali`). Symbols such as
 `@ : / # ?` break the connection address in step 8.
 
@@ -294,7 +294,7 @@ postgresql://ehumure:Humure2026Kigali@localhost:5432/ehumure
 | `5432` | PostgreSQL's port (from the installer) | usually `5432` |
 | `ehumure` (last) | database name from 7.2 | `ehumure` |
 
-📝 Write your full address down. You use it in steps 8 and 9.
+Write your full address down. You use it in steps 8 and 9.
 
 **Test it now:**
 
@@ -336,7 +336,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Example output (yours will be different):
 `3f9a1c0e7b2d4a6f8e1c3b5d7f9a0c2e4b6d8f0a1c3e5b7d9f1a3c5e7b9d0f2a`
 
-📝 Write the three keys down as **key 1**, **key 2** and **key 3**.
+Write the three keys down as **key 1**, **key 2** and **key 3**.
 
 ### 8.3 Fill in the file
 
@@ -478,6 +478,7 @@ psql "$DATABASE_URL" -f database/migrate_sprint10_appointment_follow_up.sql
 psql "$DATABASE_URL" -f database/migrate_sprint11_sms_provider_simulation_status.sql
 psql "$DATABASE_URL" -f database/migrate_sprint12_duplicates_approval_sms_alert_routing.sql
 psql "$DATABASE_URL" -f database/migrate_sprint13_remove_seed_facility.sql
+psql "$DATABASE_URL" -f database/migrate_sprint14_close_case_reason.sql
 ```
 
 **Check it worked:** list the tables:
@@ -512,10 +513,10 @@ cd backend
 npm run seed
 ```
 
-✅ Success looks like:
+Success looks like:
 `Database is ready. No sample facility was added. ...`
 
-❌ If you see `facility setup failed: ...` or `Set JWT_SECRET ...`, the
+If you see `facility setup failed: ...` or `Set JWT_SECRET ...`, the
 message says what is wrong. See [Problems](#18-problems-and-how-to-fix-them).
 
 `seed` only **checks** the connection and the tables. It does not add any
@@ -534,7 +535,7 @@ You use **two terminal windows**.
 npm start
 ```
 
-✅ Success looks like: `Open e-Humure on this computer: http://localhost:4000/`
+Success looks like: `Open e-Humure on this computer: http://localhost:4000/`
 
 Leave this window open. **Closing it stops e-Humure.** (The SMS worker starts
 automatically together with the server.)
@@ -546,7 +547,7 @@ automatically together with the server.)
 npm run simulator
 ```
 
-✅ Success looks like: `SMS simulator on http://localhost:4002 ...`
+Success looks like: `SMS simulator on http://localhost:4002 ...`
 
 Every SMS e-Humure "sends" (appointment reminders, approval messages) appears
 in this window instead of going to a real phone. Without the simulator,

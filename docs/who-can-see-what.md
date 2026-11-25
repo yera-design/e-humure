@@ -31,8 +31,11 @@ There are five roles. There is no "desk staff" role.
  **Mental-health staff review and follow up**, so they need the detail, the
   patient's phone number and the appointment tools. They see only the alerts
   assigned to them.
- **Only a clinical psychologist closes a case.** A psychiatric nurse can
-  escalate but cannot close, so nothing is quietly dismissed.
+ **Closing a case needs a written reason.** A psychiatric nurse closes the
+  cases she follows herself once the patient is well; an escalated case is
+  closed only by the clinical psychologist. The reason is saved with the case,
+  future visits are cancelled with their reminder SMS, and the closure is in
+  the audit log, so nothing is quietly dismissed.
 
 ## Scoping on top of permissions
  
@@ -57,4 +60,5 @@ escalation, appointment and administrative decision is written to `audit_log`
 with the actor, the record, the outcome and the IP address. The system
 administrator can read the full log; nobody else can.
 ```
+
 

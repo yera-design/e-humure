@@ -199,21 +199,30 @@ psychiatric nurse (Bella).
 
  The patient receives an SMS confirmation. A reminder is queued for before the visit.
 
-### Step 8: Record the visit and (optionally) escalate
-1. In Bella's appointments, click **Mark attended**.
-2. Now the nurse chooses one of two things:
-   - **Continue care herself:** click **Book another appointment**.
-     (Escalation is never required.)
+### Step 8: Record the visit, then continue, close or escalate
+1. In Bella's appointments, click **Mark attended**, and add a **visit note** if you like.
+2. Now the nurse chooses one of three things:
+   - **Continue care herself:** click **Book another appointment**. The
+     **Upcoming appointments** count shows only visits still to come; the
+     attended visit stays in the list as history. (Escalation is never required.)
+   - **Close the case** when the patient is well: click **Close case (patient
+     is well)** and write a reason of 10–500 characters (for example *"Symptoms
+     resolved after 3 visits"*). Any future visit of that case is cancelled and
+     its reminder SMS is stopped. The card then shows **CASE CLOSED** with the reason.
    - **Escalate:** click **Escalate to clinical psychologist**, write a reason
      of 10–500 characters (for example *"Symptoms not improving after first visit"*), and confirm.
+     To test step 9, choose this one.
 
 The system blocks escalation before a first visit has been attended.
 
 ### Step 9: The clinical psychologist closes the case
 1. Sign out, then sign in as `chris.cp`.
-2. Open the escalated case, add a **visit note** if you like, then click **Mark case handled**.
+2. Open the escalated case, add a **visit note** if you like, then click
+   **Close case (patient is well)** and write a reason.
 
- The case is closed. Only a clinical psychologist can close a case.
+The case is closed. An escalated case can be closed only by the clinical
+psychologist; the psychiatric nurse no longer sees a close button for it.
+
 
 ### Step 10: Check the oversight screens
 - **Facility head** (`marker.head`): staff list, facility summary, and the

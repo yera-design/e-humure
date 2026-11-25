@@ -145,17 +145,23 @@ function renderDetail(a) {
     }
   }
   var actions = document.createElement("div"); actions.className = "actions";
-  // Only a clinical psychologist closes a case.
-  if (sessionStorage.getItem("ehumure_role") === "clinical_psychologist") {
+  // A psychiatric nurse closes cases she follows herself; an escalated case is
+  // closed only by the clinical psychologist. A short reason is required.
+  var viewerRole = sessionStorage.getItem("ehumure_role");
+  if (a.assigned_to_me && ((viewerRole === "psychiatric_nurse" && !a.requires_specialist) || viewerRole === "clinical_psychologist")) {
     var handled = document.createElement("button"); handled.type = "button"; handled.className = "secondary";
-    handled.textContent = rw()?"Shyira ku byarangiye":"Mark as handled";
+    handled.textContent = rw()?"Funga ikibazo (umurwayi yorohewe)":"Close case (patient is well)";
     handled.onclick = function () {
+      var reason = window.prompt(rw()?"Andika impamvu ngufi yo gufunga ikibazo (inyuguti 10 kugeza kuri 500), urugero: Ibimenyetso byashize nyuma y'isura 3.":"Write a short reason for closing the case (10 to 500 characters), for example: Symptoms resolved after 3 visits.", "");
+      if (reason === null) return;
+      reason = reason.trim();
+      if (reason.length < 10 || reason.length > 500) { error.textContent = rw()?"Andika impamvu y'inyuguti 10 kugeza kuri 500.":"Write a reason from 10 to 500 characters."; error.className = "status error"; return; }
       handled.disabled = true; error.className = "status"; error.textContent = rw()?"Gufunga ikibazo\u2026":"Closing the case\u2026";
-      fetch(API + "/alerts/" + encodeURIComponent(a.alert_id) + "/handled", { method: "POST", headers: authHeaders(true), body: "{}" })
+      fetch(API + "/alerts/" + encodeURIComponent(a.alert_id) + "/handled", { method: "POST", headers: authHeaders(true), body: JSON.stringify({ reason: reason }) })
         .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
         .then(function (out) {
           if (!out.ok) { error.textContent = out.data.error || (rw()?"Ntibyashobotse gufunga ikibazo.":"The case could not be closed."); error.className = "status error"; return; }
-          error.textContent = rw()?"Ikibazo cyafunzwe.":"Case marked as handled."; error.className = "status";
+          error.textContent = rw()?"Ikibazo cyafunzwe.":"Case closed."; error.className = "status";
           detail.hidden = true; list.hidden = false; loadAlerts();
         })
         .catch(function () { error.textContent = rw()?"Ntibyashobotse kugera kuri seriveri.":"Could not reach the server."; error.className = "status error"; })
@@ -191,4 +197,5 @@ window.onload = function () {
   loadAlerts();
 };
 document.addEventListener("ehumure:language", function () { loadAlerts(); if (typeof window.loadAppointments === "function") window.loadAppointments(); });
+
 

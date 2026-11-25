@@ -45,8 +45,10 @@ There are no demo or seed accounts. These suites use accounts you create.
 - Bad input: 8 answers instead of 9, an answer of 4, an answer of 1.5, text
   instead of true or false. Each must throw, never return a quiet wrong answer.
 - An NCD nurse calling `/alerts`: 403.
-- A psychiatric nurse calling `/alerts/:id/handled`: 403, only a psychologist
-  closes a case.
+- A psychiatric nurse calling `/alerts/:id/handled` on an **escalated** case:
+  403, only the clinical psychologist closes it. On her own case with a reason
+  of 10–500 characters: closed, future visits and their queued SMS cancelled.
+- `/alerts/:id/handled` with no reason or a reason under 10 characters: 400.
 - Wrong password: 401 with the same message as a wrong username.
 - An 077 number: rejected everywhere.
 

@@ -15,5 +15,6 @@ Apply these files in order to PostgreSQL:
 11. `migrate_sprint11_sms_provider_simulation_status.sql`
 12. `migrate_sprint12_duplicates_approval_sms_alert_routing.sql`
 13. `migrate_sprint13_remove_seed_facility.sql`
+14. `migrate_sprint14_close_case_reason.sql`
 
 The current schema stores patients without names, encrypts phone numbers in the application, hashes staff passwords, scopes staff/patient records by facility, stores resumable screening drafts, persists appointment reminder queue entries, and distinguishes simulated SMS fallback from provider-accepted rows. Run migrations only after making a database backup. The reset procedure for a development database is documented in the root README; it is destructive and must only be run against the intended database.
