@@ -66,7 +66,7 @@ function escalateAlert(alert, button, statusBox) {
   // alert and written to the audit log, so it is not optional.
   window.askReason(button, {
     label: rw() ? "Andika impamvu iki kibazo kirenze ubushobozi bwawe (inyuguti 10 kugeza 500):" : "Write why this case is beyond what you can handle (10 to 500 characters):",
-    placeholder: rw() ? "Urugero: Ibimenyetso ntibigabanuka nyuma y'isura ya mbere." : "For example: Symptoms not improving after the first visit.",
+    placeholder: rw() ? "Urugero: umurwayi ararembye akeneye ubuvuzi bwisumbuye." : "For example:Patient's condition is beyond my ability.",
     confirm: rw() ? "Ohereza ku nzobere" : "Refer to the psychologist",
     working: rw() ? "Kohereza ikibazo ku nzobere…" : "Referring the case to a clinical psychologist…"
   }, function (reason, done) { sendEscalation(alert, reason, button, statusBox, done); });
@@ -219,7 +219,7 @@ function renderDetail(a) {
     fetch(API + "/appointments", { method: "POST", headers: authHeaders(true), body: JSON.stringify({ patientId: a.patient_id, alertId: a.alert_id, scheduledFor: new Date(date.value).toISOString() }) })
       .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
       .then(function (out) { if (!out.ok) { error.textContent = out.data.error || (rw()?"Gahunda ntiyabitswe.":"Appointment was not saved."); error.className = "status error"; return; } error.textContent = rw()?"Gahunda yabitswe. Ubutumwa butatu bwo kwibutsa (umurwayi x2, nawe) buri muri sisitemu yo kugerageza; nta butumwa nyabwo bwoherejwe.":"Appointment saved. Three reminders queued in the SMS simulator: confirmation to the patient, a reminder to the patient the day before, and a reminder to you the day before. No real SMS has been sent."; error.className = "status"; loadAppointments(); loadAlerts(); })
-      .catch(function () { error.textContent = navigator.onLine ? (rw()?"Ntibyashobotse kubika gahunda. Reba seriveri wongere ugerageze.":"Could not save the appointment. Check the server and try again.") : (rw()?"Nta murongo. Gahunda ntiyabitswe.":"You are offline. The appointment was not saved."); error.className = "status error"; })
+      .catch(function () { error.textContent = navigator.onLine ? (rw()?"Ntibyashobotse kubika gahunda. Reba seriveri wongere ugerageze.":"Could not save the appointment. Check the server and try again.") : (rw()?"Nta murandasi. Gahunda ntiyabitswe.":"You are offline. The appointment was not saved."); error.className = "status error"; })
       .finally(function () { book.disabled = false; });
   };
   var back = document.createElement("button"); back.type = "button"; back.className = "secondary"; back.textContent = rw()?"Subira ku nteguza":"Back to alerts"; back.onclick = function () { detail.hidden = true; list.hidden = false; };

@@ -111,7 +111,7 @@
     var actionMessage = document.createElement("p"); actionMessage.id = "appointment-action-message"; actionMessage.className = "status"; actionMessage.setAttribute("aria-live", "polite"); card.appendChild(actionMessage);
     if (item.alert_status === "closed") {
       var closedBox = document.createElement("div"); closedBox.className = "case-transferred";
-      var closedTitle = document.createElement("strong"); closedTitle.textContent = text("CASE CLOSED", "IKIBAZO CYAFUNZWE"); closedBox.appendChild(closedTitle);
+      var closedTitle = document.createElement("strong"); closedTitle.textContent = text("CASE CLOSED", "IVURWA RYASOJWE"); closedBox.appendChild(closedTitle);
       if (item.closing_reason) { var closedText = document.createElement("p"); closedText.textContent = text("Reason: ", "Impamvu: ") + item.closing_reason; closedBox.appendChild(closedText); }
       card.appendChild(closedBox);
       if (item.status === "attended") renderNotes(item, card);
@@ -147,7 +147,7 @@
         addButton(card, text("Escalate to clinical psychologist", "Ohereza ku nzobere mu mitekerereze"), true, function (button) {
           window.askReason(button, {
             label: text("Write why this case needs a psychologist (10 to 500 characters):", "Andika impamvu iki kibazo gikeneye inzobere (inyuguti 10 kugeza kuri 500):"),
-            placeholder: text("For example: Symptoms not improving after the first visit.", "Urugero: Ibimenyetso ntibigabanuka nyuma y'isura ya mbere."),
+            placeholder: text("For example: Patient's condition is beyond my ability.", "Urugero: Uyu murwayi ararembye akeneye ubuvuzi bwisumbuye."),
             confirm: text("Refer to the psychologist", "Ohereza ku nzobere"),
             working: text("Referring the case…", "Kohereza ikibazo…")
           }, function (reason, done) {
