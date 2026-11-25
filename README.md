@@ -458,7 +458,7 @@ psql $env:DATABASE_URL -f database\migrate_sprint10_appointment_follow_up.sql
 psql $env:DATABASE_URL -f database\migrate_sprint11_sms_provider_simulation_status.sql
 psql $env:DATABASE_URL -f database\migrate_sprint12_duplicates_approval_sms_alert_routing.sql
 psql $env:DATABASE_URL -f database\migrate_sprint13_remove_seed_facility.sql
-psql "$DATABASE_URL" -f database/migrate_sprint14_close_case_reason.sql
+psql $env:DATABASE_URL -f database/migrate_sprint14_close_case_reason.sql
 ```
 
 **macOS / Linux / Windows cmd:**
